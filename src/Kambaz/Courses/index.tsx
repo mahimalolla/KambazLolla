@@ -1,18 +1,18 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import KambazNavigation from "./Navigation";  
-import Account from "./Account";
-import Dashboard from "./Account/Dashboard";
-import Home from "./Home";
-import Modules from "./Modules";
-import Assignments from "./Assignments";
-import AssignmentEditor from "./Assignments/editor";
-import Quizzes from "./Quizzes";
-import QuizEditor from "./Quizzes/Editor";
-import Grades from "./Grades";
-import Piazza from "./Piazza";
-import Zoom from "./Zoom";
-import PeopleTable from "./Courses/People/Table"; 
-import './styles.css';
+import KambazNavigation from "../Navigation";  
+import Account from "../Account";
+import Dashboard from "../Account/Dashboard";
+import Home from "../Home";
+import Modules from "../Modules";
+import Assignments from "../Assignments";
+import AssignmentEditor from "../Assignments/editor";
+import Quizzes from "../Quizzes";
+import QuizEditor from "../Quizzes/Editor";
+import Grades from "../Grades";
+import Piazza from "../Piazza";
+import Zoom from "../Zoom";
+import PeopleTable from "../People/Table"; 
+import '../styles.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function Kambaz() {
