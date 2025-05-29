@@ -16,7 +16,10 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "noStrictGenericChecks": true
   },
   "include": ["src"]
 }
