@@ -1,0 +1,183 @@
+#wd-lab1 {
+  padding: 2rem;
+  background-color: white;
+  color: #333;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 1rem 0;
+}
+
+#wd-lab1 h1 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+#wd-lab1 h2 {
+  color: #34495e;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+#wd-lab1 h3 {
+  color: #2980b9;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+#wd-lab1 h4 {
+  margin-top: 2rem;
+  color: #3498db;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+#wd-lab1 h5, #wd-lab1 h6 {
+  color: #555;
+}
+
+#wd-lab1 p {
+  color: #555;
+  line-height: 1.6;
+}
+
+#wd-lab1 ul, #wd-lab1 ol {
+  color: #555;
+}
+
+#wd-lab1 li {
+  margin-bottom: 0.25rem;
+}
+
+#wd-lab1 a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+#wd-lab1 a:hover {
+  text-decoration: underline;
+  color: #2980b9;
+}
+
+/* Table Styles */
+#wd-lab1 table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+  background-color: white;
+}
+
+#wd-lab1 table th,
+#wd-lab1 table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  color: #333;
+}
+
+#wd-lab1 table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+#wd-lab1 table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+#wd-lab1 table tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Form Styles */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  max-width: 600px;
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+form label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #495057;
+}
+
+form input,
+form select,
+form textarea {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  background: white;
+  color: #495057;
+  font-size: 1rem;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+form input[type="radio"],
+form input[type="checkbox"] {
+  margin-right: 0.5rem;
+  transform: scale(1.2);
+  background: white;
+}
+
+form button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+form button:hover {
+  background-color: #0056b3;
+}
+
+/* Image Styles */
+#wd-lab1 img {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin: 0.5rem 0;
+}
+
+/* Navigation Styles */
+#wd-lab1 hr {
+  border: none;
+  height: 1px;
+  background-color: #e9ecef;
+  margin: 2rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #wd-lab1 {
+    padding: 1rem;
+  }
+  
+  form {
+    max-width: 100%;
+  }
+  
+  #wd-lab1 table {
+    font-size: 0.9rem;
+  }
+}

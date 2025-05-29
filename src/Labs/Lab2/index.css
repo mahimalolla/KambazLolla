@@ -1,0 +1,762 @@
+/* Lab 2 - Cascading Style Sheets */
+
+/* 2.1.2 - Style attribute (inline styles are in the JSX) */
+#wd-style-attribute-paragraph {
+  background-color: yellow;
+  color: blue;
+  padding: 10px;
+  border: 2px solid red;
+}
+
+/* 2.1.3 - ID Selectors */
+#wd-id-selector-1 {
+  color: white;
+  background-color: red;
+  padding: 10px;
+  margin: 5px 0;
+}
+
+#wd-id-selector-2 {
+  color: black;
+  background-color: yellow;
+  padding: 10px;
+  margin: 5px 0;
+}
+
+/* 2.1.4 - Class Selectors */
+.wd-class-selector {
+  color: blue;
+  background-color: lightgray;
+  padding: 8px;
+  margin: 5px 0;
+}
+
+/* 2.1.5 - Document Structure Selectors */
+#wd-structure-div {
+  background-color: red;
+  color: white;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+#wd-structure-div span {
+  background-color: yellow;
+  color: blue;
+  padding: 5px;
+}
+
+/* 2.1.6 - Foreground Colors */
+#wd-foreground-blue-heading {
+  color: blue;
+}
+
+#wd-foreground-red-text {
+  color: red;
+}
+
+#wd-foreground-green-text {
+  color: green;
+}
+
+/* 2.1.7 - Background Colors */
+#wd-background-blue-heading {
+  background-color: blue;
+  color: white;
+  padding: 10px;
+}
+
+#wd-background-red-paragraph {
+  background-color: red;
+  color: black;
+  padding: 10px;
+}
+
+#wd-background-green-span {
+  background-color: green;
+  color: white;
+  padding: 5px;
+}
+
+/* 2.1.8 - Borders */
+#wd-border-fat-red {
+  border: 10px solid red;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+#wd-border-thin-blue-dashed {
+  border: 2px dashed blue;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+/* 2.1.9 - Margins and Padding */
+#wd-margin-red-yellow {
+  border: 10px solid red;
+  background-color: yellow;
+  padding-top: 30px;
+  padding-left: 30px;
+  margin: 10px 0;
+}
+
+#wd-margin-blue-yellow {
+  border: 10px solid blue;
+  background-color: yellow;
+  padding-bottom: 30px;
+  margin: 10px 0;
+}
+
+#wd-margin-yellow-blue {
+  border: 10px solid yellow;
+  background-color: blue;
+  color: white;
+  padding: 30px;
+  margin: 10px 0;
+}
+
+#wd-margin-red-yellow-bottom {
+  border: 10px solid red;
+  background-color: yellow;
+  padding: 10px;
+  margin-bottom: 30px;
+}
+
+#wd-margin-blue-yellow-centered {
+  border: 10px solid blue;
+  background-color: yellow;
+  padding: 10px;
+  margin: 10px auto;
+  width: 50%;
+  text-align: center;
+}
+
+#wd-margin-yellow-blue-all {
+  border: 10px solid yellow;
+  background-color: blue;
+  color: white;
+  padding: 10px;
+  margin: 30px;
+}
+
+/* 2.1.10-13 - Corners */
+#wd-corner-top-left-right {
+  background-color: lightblue;
+  border: 3px solid navy;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+#wd-corner-bottom-left-right {
+  background-color: lightgreen;
+  border: 3px solid darkgreen;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+#wd-corner-all {
+  background-color: lightcoral;
+  border: 3px solid darkred;
+  border-radius: 20px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+#wd-corner-all-except-top-right {
+  background-color: lightyellow;
+  border: 3px solid orange;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+/* Additional styles for better presentation */
+#wd-lab2 {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+#wd-lab2 h2 {
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+}
+
+#wd-lab2 h3 {
+  color: #555;
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+#wd-lab2 h4 {
+  color: #666;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+/* Ensure Bootstrap styles don't conflict */
+.container {
+  margin-top: 40px;
+}
+
+/* Add new margin variations */
+.wd-margin-top {
+  margin-top: 50px;
+}
+
+.wd-margin-large {
+  margin: 60px;
+}
+
+.wd-margin-small {
+  margin: 10px;
+}
+
+/* Add padding classes */
+.wd-padding-all {
+  padding: 20px;
+}
+
+.wd-padding-vertical {
+  padding-top: 25px;
+  padding-bottom: 25px;
+}
+
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}
+
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Absolute Position Classes */
+.wd-pos-absolute-10-10 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.wd-pos-absolute-50-50 {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+}
+
+.wd-pos-absolute-120-20 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Absolute Position Classes */
+.wd-pos-absolute-10-10 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.wd-pos-absolute-50-50 {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+}
+
+.wd-pos-absolute-120-20 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+}
+
+/* Fixed Position Classes */
+.wd-pos-fixed {
+  position: fixed;
+  right: 0px;
+  bottom: 50%;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}
+
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Absolute Position Classes */
+.wd-pos-absolute-10-10 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.wd-pos-absolute-50-50 {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+}
+
+.wd-pos-absolute-120-20 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+}
+
+/* Fixed Position Classes */
+.wd-pos-fixed {
+  position: fixed;
+  right: 0px;
+  bottom: 50%;
+}
+
+/* Z-index Classes */
+.wd-zindex-bring-to-front {
+  z-index: 10;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}
+
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Absolute Position Classes */
+.wd-pos-absolute-10-10 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.wd-pos-absolute-50-50 {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+}
+
+.wd-pos-absolute-120-20 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+}
+
+/* Fixed Position Classes */
+.wd-pos-fixed {
+  position: fixed;
+  right: 0px;
+  bottom: 50%;
+}
+
+/* Z-index Classes */
+.wd-zindex-bring-to-front {
+  z-index: 10;
+}
+
+/* Float Classes */
+.wd-float-left {
+  float: left;
+  height: 100px;
+}
+
+.wd-float-right {
+  float: right;
+  height: 100px;
+}
+
+.wd-float-done {
+  clear: both;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}
+
+/* Position CSS Classes */
+.wd-pos-relative-nudge-up-right {
+  position: relative;
+  bottom: 30px;
+  left: 30px;
+}
+
+.wd-pos-relative-nudge-down-right {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}
+
+.wd-pos-relative {
+  position: relative;
+}
+
+/* Absolute Position Classes */
+.wd-pos-absolute-10-10 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.wd-pos-absolute-50-50 {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+}
+
+.wd-pos-absolute-120-20 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+}
+
+/* Fixed Position Classes */
+.wd-pos-fixed {
+  position: fixed;
+  right: 0px;
+  bottom: 50%;
+}
+
+/* Z-index Classes */
+.wd-zindex-bring-to-front {
+  z-index: 10;
+}
+
+/* Float Classes */
+.wd-float-left {
+  float: left;
+  height: 100px;
+}
+
+.wd-float-right {
+  float: right;
+  height: 100px;
+}
+
+.wd-float-done {
+  clear: both;
+}
+
+/* Grid Layout Classes */
+.wd-grid-row {
+  clear: both;
+}
+
+.wd-grid-col-half-page {
+  width: 50%;
+  float: left;
+}
+
+.wd-grid-col-third-page {
+  width: 33%;
+  float: left;
+}
+
+.wd-grid-col-two-thirds-page {
+  width: 67%;
+  float: left;
+}
+
+.wd-grid-col-left-sidebar {
+  width: 20%;
+  float: left;
+}
+
+.wd-grid-col-main-content {
+  width: 60%;
+  float: left;
+}
+
+.wd-grid-col-right-sidebar {
+  width: 20%;
+  float: left;
+}
+
+/* Dimension classes */
+.wd-dimension-portrait {
+  width: 100px;
+  height: 150px;
+}
+
+.wd-dimension-landscape {
+  width: 150px;
+  height: 100px;
+}
+
+.wd-dimension-square {
+  width: 100px;
+  height: 100px;
+}
+
+/* Background color classes */
+.wd-bg-color-gray {
+  background-color: #cccccc;
+}
+
+.wd-bg-color-yellow {
+  background-color: yellow;
+}
+
+.wd-bg-color-blue {
+  background-color: blue;
+}
+
+.wd-bg-color-red {
+  background-color: red;
+}
+
+/* Text color classes */
+.wd-fg-color-white {
+  color: white;
+}

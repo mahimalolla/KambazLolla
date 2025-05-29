@@ -1,0 +1,40 @@
+[
+  {
+    "_id": "M101",
+    "name": "Week 1 - Rocket Fundamentals",
+    "course": "RS101",
+    "lessons": [
+      { "name": "Introduction to Rocket Propulsion", "_id": "L101" },
+      { "name": "History of Rocketry", "_id": "L102" },
+      { "name": "Basic Rocket Equation", "_id": "L103" }
+    ]
+  },
+  {
+    "_id": "M102", 
+    "name": "Week 2 - Propellant Systems",
+    "course": "RS101",
+    "lessons": [
+      { "name": "Liquid Propellants", "_id": "L201" },
+      { "name": "Solid Propellants", "_id": "L202" }
+    ]
+  },
+  {
+    "_id": "M201",
+    "name": "Week 1 - Aerodynamic Basics", 
+    "course": "RS102",
+    "lessons": [
+      { "name": "Introduction to Aerodynamics", "_id": "L301" },
+      { "name": "Fluid Properties", "_id": "L302" },
+      { "name": "Bernoulli's Equation", "_id": "L303" }
+    ]
+  },
+  {
+    "_id": "M202",
+    "name": "Week 2 - Airfoil Theory",
+    "course": "RS102", 
+    "lessons": [
+      { "name": "Airfoil Geometry", "_id": "L401" },
+      { "name": "Lift Generation", "_id": "L402" }
+    ]
+  }
+]
