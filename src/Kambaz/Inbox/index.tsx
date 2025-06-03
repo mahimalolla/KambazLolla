@@ -26,11 +26,11 @@ export default function Inbox() {
       id: 1,
       from: 'Prof. Smith',
       fromEmail: 'j.smith@northeastern.edu',
-      subject: 'Assignment 2 Feedback',
-      preview: 'Great work on your React components! I have some suggestions for improvement...',
-      content: 'Dear Student,\n\nI wanted to provide you with feedback on Assignment 2. Your React components show good understanding of the fundamentals. However, I noticed a few areas where you can improve:\n\n1. Consider using more descriptive variable names\n2. Add proper error handling\n3. Implement better component composition\n\nOverall, excellent work! Keep it up.\n\nBest regards,\nProf. Smith',
-      time: '2 hours ago',
-      date: '2025-05-29',
+      subject: 'Assignment 4 - State Management Feedback',
+      preview: 'Excellent work on your React state management! Your Redux implementation shows solid understanding...',
+      content: 'Dear Student,\n\nI wanted to provide you with feedback on Assignment 4 - State Management. Your React components and Redux implementation show excellent understanding of the fundamentals.\n\nHighlights:\n✅ Proper useState implementation\n✅ Clean Redux store setup\n✅ Well-structured CRUD operations\n✅ Good component organization\n\nAreas for improvement:\n1. Consider adding loading states for async operations\n2. Implement error boundaries for better error handling\n3. Add prop validation with TypeScript interfaces\n\nOverall grade: A-\n\nKeep up the excellent work!\n\nBest regards,\nProf. Smith',
+      time: '1 hour ago',
+      date: '2025-06-03',
       isRead: false,
       isStarred: true,
       type: 'academic',
@@ -38,13 +38,13 @@ export default function Inbox() {
     },
     {
       id: 2,
-      from: 'Academic Registrar',
-      fromEmail: 'registrar@northeastern.edu',
-      subject: 'Course Registration Reminder',
-      preview: 'Registration for Fall 2025 semester opens next week. Make sure to...',
-      content: 'Dear Student,\n\nThis is a reminder that course registration for Fall 2025 semester will open on June 15th at 9:00 AM.\n\nPlease review your degree requirements and plan your schedule accordingly. Academic advisors are available for consultation.\n\nImportant dates:\n- Registration opens: June 15, 9:00 AM\n- Registration deadline: July 1, 11:59 PM\n- Add/Drop period: First week of classes\n\nBest regards,\nAcademic Registrar',
-      time: '1 day ago',
-      date: '2025-05-28',
+      from: 'Kambaz System',
+      fromEmail: 'noreply@kambaz.edu',
+      subject: 'Course Module Update - CS5610',
+      preview: 'New modules have been added to your Web Development course. Check out the latest content...',
+      content: 'Dear Student,\n\nNew modules have been added to your CS5610 Web Development course:\n\n📚 New Modules:\n• Module 7: Advanced State Management\n• Module 8: Server-Side Rendering\n• Module 9: Testing React Applications\n\nThese modules include:\n- Interactive lectures\n- Hands-on coding exercises\n- Project assignments\n- Additional resources\n\nThe modules are now available in your course dashboard.\n\nHappy learning!\nKambaz Learning Management System',
+      time: '3 hours ago',
+      date: '2025-06-03',
       isRead: true,
       isStarred: false,
       type: 'administrative',
@@ -52,13 +52,13 @@ export default function Inbox() {
     },
     {
       id: 3,
-      from: 'Study Group',
-      fromEmail: 'studygroup.cs@northeastern.edu',
-      subject: 'Study Session Tomorrow',
-      preview: 'Hey everyone! Reminder about our study session tomorrow at 3 PM in...',
-      content: 'Hey everyone!\n\nJust a reminder about our study session tomorrow (May 30th) at 3:00 PM in the library, Room 204.\n\nWe\'ll be reviewing:\n- JavaScript ES6 features\n- React hooks\n- State management\n\nPlease bring your laptops and any specific questions you have.\n\nSee you there!\nStudy Group Organizers',
-      time: '3 hours ago',
-      date: '2025-05-29',
+      from: 'Study Group Chat',
+      fromEmail: 'studygroup.cs5610@northeastern.edu',
+      subject: 'Redux Study Session - Tomorrow 2PM',
+      preview: 'Hey everyone! Let\'s meet tomorrow to review Redux concepts and work on Assignment 4 together...',
+      content: 'Hey CS5610 Study Group!\n\n🗓️ Study Session Details:\n• Date: Tomorrow (June 4th)\n• Time: 2:00 PM - 4:00 PM\n• Location: Library Room 301\n• Topic: Redux & State Management\n\n📋 Agenda:\n1. Review Redux fundamentals\n2. Work through Assignment 4 problems\n3. Discuss CRUD operations\n4. Q&A session\n\nPlease bring:\n💻 Your laptop with code\n📝 Any specific questions\n☕ Snacks to share (optional!)\n\nSee you there!\n- Study Group Organizers',
+      time: '5 hours ago',
+      date: '2025-06-03',
       isRead: false,
       isStarred: false,
       type: 'social',
@@ -66,27 +66,41 @@ export default function Inbox() {
     },
     {
       id: 4,
-      from: 'IT Support',
-      fromEmail: 'itsupport@northeastern.edu',
-      subject: 'System Maintenance Notice',
-      preview: 'Scheduled maintenance on the learning management system this weekend...',
-      content: 'Dear Students and Faculty,\n\nWe will be performing scheduled maintenance on the learning management system this weekend.\n\nMaintenance window:\n- Start: Saturday, June 1st, 11:00 PM\n- End: Sunday, June 2nd, 6:00 AM\n\nDuring this time, you may experience:\n- Temporary service interruptions\n- Slower response times\n- Unable to submit assignments\n\nPlease plan accordingly and submit any assignments before the maintenance window.\n\nThank you for your patience.\nIT Support Team',
-      time: '5 hours ago',
-      date: '2025-05-29',
+      from: 'Netlify Deploy Bot',
+      fromEmail: 'deploy@netlify.com',
+      subject: '✅ Deployment Successful - kambaz-app',
+      preview: 'Your site has been successfully deployed! Your latest changes are now live...',
+      content: '🎉 Deployment Successful!\n\nYour Kambaz application has been successfully deployed to Netlify.\n\n📊 Deployment Details:\n• Site: kambaz-react-web-app\n• Branch: a4-assignment\n• Commit: "Add Lab4 state management features"\n• Deploy time: 2 minutes 34 seconds\n• Status: ✅ Live\n\n🔗 Your site is available at:\nhttps://cheerful-gumdrop-bc5c37.netlify.app\n\n📈 Performance:\n• Build time: 1m 45s\n• Bundle size: 2.3 MB\n• All checks passed ✅\n\nGreat work on getting your assignment deployed!\n\n- Netlify Team',
+      time: '2 hours ago',
+      date: '2025-06-03',
       isRead: true,
-      isStarred: false,
+      isStarred: true,
       type: 'technical',
       priority: 'medium'
     },
     {
       id: 5,
+      from: 'GitHub',
+      fromEmail: 'noreply@github.com',
+      subject: '🔄 Pull Request Ready for Review',
+      preview: 'Your pull request "Add CRUD operations for courses and modules" is ready for review...',
+      content: '👋 Hello!\n\nYour pull request is ready for review:\n\n📋 Pull Request Details:\n• Title: "Add CRUD operations for courses and modules"\n• Repository: KambazLolla/kambaz-react-web-app\n• Branch: a4-assignment → main\n• Files changed: 12\n• Additions: +450 lines\n• Deletions: -23 lines\n\n✨ Changes include:\n• Dashboard CRUD functionality\n• Module state management\n• Redux integration\n• Improved UI components\n\n🔍 Review checklist:\n☑️ All tests passing\n☑️ No merge conflicts\n☑️ Code follows style guidelines\n☑️ Documentation updated\n\nYour code looks great! Ready to merge when you are.\n\n- GitHub Team',
+      time: '4 hours ago',
+      date: '2025-06-03',
+      isRead: false,
+      isStarred: true,
+      type: 'technical',
+      priority: 'high'
+    },
+    {
+      id: 6,
       from: 'Career Services',
       fromEmail: 'careers@northeastern.edu',
-      subject: '🚀 Summer Internship Opportunities',
-      preview: 'Exciting internship opportunities available for CS students...',
-      content: 'Dear Computer Science Students,\n\nWe have exciting summer internship opportunities that might interest you:\n\n🏢 Tech Companies:\n- Google (Software Engineering Intern)\n- Microsoft (Product Management Intern)\n- Amazon (Data Science Intern)\n\n💡 Startups:\n- Local fintech startup seeking full-stack developers\n- AI/ML startup looking for research interns\n\n📅 Application deadlines vary, but most are due by June 15th.\n\nVisit our career portal for more details and application links.\n\nBest of luck!\nCareer Services Team',
+      subject: '🚀 React Developer Internship Opportunity',
+      preview: 'Based on your coursework in CS5610, we have an exciting React internship opportunity...',
+      content: 'Dear Computer Science Student,\n\nBased on your excellent performance in CS5610 Web Development, we have an exciting opportunity that matches your skills:\n\n🏢 Company: TechFlow Solutions\n📍 Location: Boston, MA (Hybrid)\n💼 Position: React Developer Intern\n⏰ Duration: Summer 2025 (12 weeks)\n💰 Compensation: $25/hour\n\n🔧 Requirements:\n• Strong React.js and JavaScript skills ✅\n• Experience with state management (Redux) ✅\n• Knowledge of modern web development ✅\n• Git/GitHub proficiency ✅\n\n📝 Responsibilities:\n• Build responsive web applications\n• Collaborate with senior developers\n• Participate in code reviews\n• Work on real client projects\n\n🎯 This looks like a perfect match for your skills!\n\nApplication deadline: June 15th\nInterviews: June 20-25th\nStart date: July 1st\n\nInterested? Reply to this email or visit our career portal.\n\nBest of luck!\nCareer Services Team',
       time: '1 day ago',
-      date: '2025-05-28',
+      date: '2025-06-02',
       isRead: false,
       isStarred: true,
       type: 'career',
@@ -126,11 +140,14 @@ export default function Inbox() {
     }
   };
 
-  const toggleStar = (emailId: number): void => {
+  const toggleStar = (emailId: number, e: React.MouseEvent): void => {
+    e.stopPropagation();
+    // Update email starred status in real app
     console.log('Toggle star for email:', emailId);
   };
 
   const markAsRead = (emailId: number): void => {
+    // Update email read status in real app
     console.log('Mark as read:', emailId);
   };
 
@@ -143,34 +160,45 @@ export default function Inbox() {
     }}>
       {/* Email List Sidebar */}
       <div style={{
-        width: '400px',
+        width: '450px',
         backgroundColor: 'white',
         borderRight: '1px solid #dee2e6',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
       }}>
         {/* Header */}
         <div style={{
-          padding: '25px',
+          padding: '30px',
           borderBottom: '1px solid #dee2e6',
           backgroundColor: '#ffffff'
         }}>
           <h1 style={{
             color: '#212529',
-            fontSize: '2rem',
+            fontSize: '2.2rem',
             fontWeight: 'bold',
             marginBottom: '15px',
             display: 'flex',
             alignItems: 'center'
           }}>
             📧 Inbox
+            <span style={{
+              backgroundColor: '#dc3545',
+              color: 'white',
+              fontSize: '0.8rem',
+              padding: '4px 8px',
+              borderRadius: '12px',
+              marginLeft: '12px'
+            }}>
+              {filteredEmails.filter(e => !e.isRead).length}
+            </span>
           </h1>
           
           {/* Search Bar */}
-          <div style={{ position: 'relative', marginBottom: '15px' }}>
+          <div style={{ position: 'relative', marginBottom: '20px' }}>
             <span style={{
               position: 'absolute',
-              left: '12px',
+              left: '15px',
               top: '50%',
               transform: 'translateY(-50%)',
               color: '#6c757d',
@@ -183,10 +211,10 @@ export default function Inbox() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 12px 12px 40px',
+                padding: '15px 15px 15px 45px',
                 border: '2px solid #e9ecef',
-                borderRadius: '8px',
-                fontSize: '14px',
+                borderRadius: '10px',
+                fontSize: '15px',
                 outline: 'none',
                 transition: 'border-color 0.2s ease',
                 boxSizing: 'border-box'
@@ -203,7 +231,7 @@ export default function Inbox() {
           </div>
 
           {/* Filter Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             {[
               { key: 'all', label: 'All', icon: '📧' },
               { key: 'unread', label: 'Unread', icon: '🔴' },
@@ -213,18 +241,20 @@ export default function Inbox() {
                 key={filterOption.key}
                 onClick={() => setFilter(filterOption.key)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 15px',
                   border: filter === filterOption.key ? '2px solid #0d6efd' : '2px solid #e9ecef',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   backgroundColor: filter === filterOption.key ? '#e7f1ff' : 'white',
                   color: filter === filterOption.key ? '#0d6efd' : '#6c757d',
-                  fontSize: '12px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  flex: 1,
+                  textAlign: 'center'
                 }}
               >
-                <span style={{ marginRight: '4px' }}>{filterOption.icon}</span>
+                <span style={{ marginRight: '6px' }}>{filterOption.icon}</span>
                 {filterOption.label}
               </button>
             ))}
@@ -243,7 +273,7 @@ export default function Inbox() {
                   if (!email.isRead) markAsRead(email.id);
                 }}
                 style={{
-                  padding: '20px',
+                  padding: '25px',
                   borderBottom: '1px solid #f1f3f4',
                   cursor: 'pointer',
                   backgroundColor: selectedEmail?.id === email.id ? '#f0f8ff' : 'white',
@@ -265,37 +295,34 @@ export default function Inbox() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
-                  marginBottom: '8px'
+                  marginBottom: '10px'
                 }}>
                   <div style={{
-                    fontWeight: email.isRead ? '400' : 'bold',
+                    fontWeight: email.isRead ? '500' : 'bold',
                     color: '#212529',
-                    fontSize: '14px',
+                    fontSize: '15px',
                     flex: 1
                   }}>
                     {email.from}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                       style={{
-                        width: '8px',
-                        height: '8px',
+                        width: '10px',
+                        height: '10px',
                         borderRadius: '50%',
                         backgroundColor: getPriorityColor(email.priority)
                       }}
                       title={`${email.priority} priority`}
                     />
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleStar(email.id);
-                      }}
+                      onClick={(e) => toggleStar(email.id, e)}
                       style={{
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        fontSize: '14px',
-                        padding: '2px'
+                        fontSize: '16px',
+                        padding: '4px'
                       }}
                     >
                       {email.isStarred ? '⭐' : '☆'}
@@ -304,10 +331,10 @@ export default function Inbox() {
                 </div>
                 
                 <div style={{
-                  fontWeight: email.isRead ? '400' : '600',
+                  fontWeight: email.isRead ? '500' : 'bold',
                   color: '#212529',
-                  fontSize: '14px',
-                  marginBottom: '8px',
+                  fontSize: '15px',
+                  marginBottom: '10px',
                   lineHeight: '1.4'
                 }}>
                   {email.subject}
@@ -315,8 +342,8 @@ export default function Inbox() {
                 
                 <div style={{
                   color: '#6c757d',
-                  fontSize: '13px',
-                  marginBottom: '10px',
+                  fontSize: '14px',
+                  marginBottom: '12px',
                   lineHeight: '1.4',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -334,20 +361,21 @@ export default function Inbox() {
                   <span style={{
                     backgroundColor: typeStyle.bg,
                     color: typeStyle.color,
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
+                    padding: '6px 10px',
+                    borderRadius: '15px',
+                    fontSize: '12px',
                     fontWeight: '500',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '5px'
                   }}>
                     <span>{typeStyle.icon}</span>
                     {email.type}
                   </span>
                   <span style={{
                     color: '#6c757d',
-                    fontSize: '12px'
+                    fontSize: '13px',
+                    fontWeight: '500'
                   }}>
                     {email.time}
                   </span>
@@ -365,44 +393,49 @@ export default function Inbox() {
             {/* Email Header */}
             <div style={{
               backgroundColor: 'white',
-              padding: '30px',
-              borderBottom: '1px solid #dee2e6'
+              padding: '35px',
+              borderBottom: '1px solid #dee2e6',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                marginBottom: '20px'
+                marginBottom: '25px'
               }}>
                 <h2 style={{
                   color: '#212529',
-                  fontSize: '1.5rem',
+                  fontSize: '1.8rem',
                   fontWeight: 'bold',
                   margin: 0,
-                  lineHeight: '1.3'
+                  lineHeight: '1.3',
+                  flex: 1,
+                  paddingRight: '20px'
                 }}>
                   {selectedEmail.subject}
                 </h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
                   <button style={{
-                    backgroundColor: '#e9ecef',
+                    backgroundColor: '#0d6efd',
+                    color: 'white',
                     border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    padding: '10px 16px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    color: '#495057'
+                    fontWeight: '500'
                   }}>
                     Reply
                   </button>
                   <button style={{
-                    backgroundColor: '#e9ecef',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
                     border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    padding: '10px 16px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    color: '#495057'
+                    fontWeight: '500'
                   }}>
                     Forward
                   </button>
@@ -412,34 +445,34 @@ export default function Inbox() {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '15px',
+                gap: '20px',
                 color: '#6c757d',
-                fontSize: '14px'
+                fontSize: '15px'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '12px'
                 }}>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '40px',
+                    height: '40px',
                     borderRadius: '50%',
                     backgroundColor: '#0d6efd',
                     color: 'white',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: 'bold'
                   }}>
                     {selectedEmail.from.charAt(0)}
                   </div>
                   <div>
-                    <div style={{ fontWeight: '500', color: '#212529' }}>
+                    <div style={{ fontWeight: '600', color: '#212529', fontSize: '16px' }}>
                       {selectedEmail.from}
                     </div>
-                    <div style={{ fontSize: '12px' }}>
+                    <div style={{ fontSize: '13px' }}>
                       {selectedEmail.fromEmail}
                     </div>
                   </div>
@@ -455,12 +488,12 @@ export default function Inbox() {
             <div style={{
               flex: 1,
               backgroundColor: 'white',
-              padding: '30px',
+              padding: '35px',
               overflowY: 'auto'
             }}>
               <div style={{
                 fontSize: '16px',
-                lineHeight: '1.6',
+                lineHeight: '1.8',
                 color: '#212529',
                 whiteSpace: 'pre-line'
               }}>
@@ -477,11 +510,11 @@ export default function Inbox() {
             backgroundColor: 'white'
           }}>
             <div style={{ textAlign: 'center', color: '#6c757d' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📧</div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>
+              <div style={{ fontSize: '5rem', marginBottom: '25px' }}>📧</div>
+              <h3 style={{ fontSize: '1.8rem', marginBottom: '15px', color: '#212529' }}>
                 Select an email to read
               </h3>
-              <p style={{ fontSize: '1rem' }}>
+              <p style={{ fontSize: '1.1rem' }}>
                 Choose an email from the list to view its contents
               </p>
             </div>
