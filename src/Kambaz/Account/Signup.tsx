@@ -19,6 +19,7 @@ export default function Signup() {
 
   return (
     <div style={{
+      marginLeft: '240px', // Account for navigation width
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
