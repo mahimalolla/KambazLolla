@@ -9,6 +9,7 @@ export default function Signin() {
 
   return (
     <div style={{
+      marginLeft: '240px', // Account for navigation sidebar
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
