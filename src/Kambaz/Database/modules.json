@@ -1,40 +1,92 @@
 [
   {
     "_id": "M101",
-    "name": "Week 1 - Rocket Fundamentals",
+    "name": "Introduction to Web Development",
     "course": "RS101",
     "lessons": [
-      { "name": "Introduction to Rocket Propulsion", "_id": "L101" },
-      { "name": "History of Rocketry", "_id": "L102" },
-      { "name": "Basic Rocket Equation", "_id": "L103" }
+      { "name": "HTML Fundamentals", "_id": "L101" },
+      { "name": "CSS Styling", "_id": "L102" },
+      { "name": "JavaScript Basics", "_id": "L103" }
     ]
   },
   {
     "_id": "M102", 
-    "name": "Week 2 - Propellant Systems",
+    "name": "React Development",
     "course": "RS101",
     "lessons": [
-      { "name": "Liquid Propellants", "_id": "L201" },
-      { "name": "Solid Propellants", "_id": "L202" }
+      { "name": "React Components", "_id": "L201" },
+      { "name": "State Management", "_id": "L202" },
+      { "name": "React Hooks", "_id": "L203" }
+    ]
+  },
+  {
+    "_id": "M103",
+    "name": "Redux & State Management", 
+    "course": "RS101",
+    "lessons": [
+      { "name": "Redux Fundamentals", "_id": "L301" },
+      { "name": "Actions & Reducers", "_id": "L302" },
+      { "name": "CRUD Operations", "_id": "L303" }
     ]
   },
   {
     "_id": "M201",
-    "name": "Week 1 - Aerodynamic Basics", 
-    "course": "RS102",
+    "name": "Software Development Lifecycle",
+    "course": "RS102", 
     "lessons": [
-      { "name": "Introduction to Aerodynamics", "_id": "L301" },
-      { "name": "Fluid Properties", "_id": "L302" },
-      { "name": "Bernoulli's Equation", "_id": "L303" }
+      { "name": "Agile Methodology", "_id": "L401" },
+      { "name": "Requirements Analysis", "_id": "L402" },
+      { "name": "System Design", "_id": "L403" }
     ]
   },
   {
     "_id": "M202",
-    "name": "Week 2 - Airfoil Theory",
-    "course": "RS102", 
+    "name": "Design Patterns",
+    "course": "RS102",
     "lessons": [
-      { "name": "Airfoil Geometry", "_id": "L401" },
-      { "name": "Lift Generation", "_id": "L402" }
+      { "name": "MVC Pattern", "_id": "L501" },
+      { "name": "Observer Pattern", "_id": "L502" },
+      { "name": "Factory Pattern", "_id": "L503" }
+    ]
+  },
+  {
+    "_id": "M301",
+    "name": "SQL Fundamentals",
+    "course": "RS103",
+    "lessons": [
+      { "name": "Database Design", "_id": "L601" },
+      { "name": "SQL Queries", "_id": "L602" },
+      { "name": "Joins & Relationships", "_id": "L603" }
+    ]
+  },
+  {
+    "_id": "M302",
+    "name": "Advanced Database Topics",
+    "course": "RS103",
+    "lessons": [
+      { "name": "Database Optimization", "_id": "L701" },
+      { "name": "NoSQL Databases", "_id": "L702" },
+      { "name": "Database Security", "_id": "L703" }
+    ]
+  },
+  {
+    "_id": "M401",
+    "name": "Programming Fundamentals",
+    "course": "RS104",
+    "lessons": [
+      { "name": "Variables & Data Types", "_id": "L801" },
+      { "name": "Control Structures", "_id": "L802" },
+      { "name": "Functions & Methods", "_id": "L803" }
+    ]
+  },
+  {
+    "_id": "M402",
+    "name": "Object-Oriented Programming",
+    "course": "RS104",
+    "lessons": [
+      { "name": "Classes & Objects", "_id": "L901" },
+      { "name": "Inheritance", "_id": "L902" },
+      { "name": "Polymorphism", "_id": "L903" }
     ]
   }
 ]
