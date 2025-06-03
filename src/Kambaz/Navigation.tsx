@@ -11,7 +11,6 @@ import { LiaBookSolid } from "react-icons/lia";
 export default function KambazNavigation() {
   const { pathname } = useLocation();
   
-
   const links = [
     { label: "Dashboard", path: "/Kambaz/Dashboard", icon: FaBook },
     { label: "Courses", path: "/Kambaz/Dashboard", icon: LiaBookSolid },
@@ -34,18 +33,33 @@ export default function KambazNavigation() {
       boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)',
       overflowY: 'auto'
     }}>
-      {/* NEU Logo */}
+      {/* NEU Logo - NOW CLICKABLE */}
       <div style={{
         backgroundColor: '#000000',
         padding: '20px',
         textAlign: 'center',
         borderBottom: '1px solid #333'
       }}>
-        <img 
-          src="https://upload.wikimedia.org/wikipedia/commons/b/bb/NU_RGB_seal_R.png"
-          alt="Northeastern University"
-          style={{ width: '60px', height: '60px', objectFit: 'contain' }}
-        />
+        <a 
+          href="https://www.northeastern.edu/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ display: 'inline-block' }}
+        >
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/b/bb/NU_RGB_seal_R.png"
+            alt="Northeastern University"
+            style={{ 
+              width: '60px', 
+              height: '60px', 
+              objectFit: 'contain',
+              cursor: 'pointer',
+              transition: 'opacity 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.target.style.opacity = '1'}
+          />
+        </a>
       </div>
 
       {/* Account Link */}
