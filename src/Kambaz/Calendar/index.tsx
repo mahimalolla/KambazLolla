@@ -6,13 +6,13 @@ export default function Calendar() {
   
   // Sample events data
   const events = [
-    { id: 1, date: '2025-05-30', title: 'Assignment 2 Due', type: 'assignment', color: '#dc3545' },
-    { id: 2, date: '2025-06-02', title: 'Quiz 3: JavaScript', type: 'quiz', color: '#ffc107' },
-    { id: 3, date: '2025-06-05', title: 'Office Hours', type: 'meeting', color: '#28a745' },
-    { id: 4, date: '2025-06-08', title: 'Project Presentation', type: 'presentation', color: '#6f42c1' },
-    { id: 5, date: '2025-06-10', title: 'Final Exam', type: 'exam', color: '#fd7e14' },
-    { id: 6, date: '2025-05-29', title: 'Lab 3 Due', type: 'assignment', color: '#dc3545' },
-    { id: 7, date: '2025-06-03', title: 'Team Meeting', type: 'meeting', color: '#28a745' },
+    { id: 1, date: '2025-06-03', title: 'Assignment 2 Due', type: 'assignment', color: '#dc3545' },
+    { id: 2, date: '2025-06-05', title: 'Quiz 3: JavaScript', type: 'quiz', color: '#ffc107' },
+    { id: 3, date: '2025-06-08', title: 'Office Hours', type: 'meeting', color: '#28a745' },
+    { id: 4, date: '2025-06-10', title: 'Project Presentation', type: 'presentation', color: '#6f42c1' },
+    { id: 5, date: '2025-06-12', title: 'Final Exam', type: 'exam', color: '#fd7e14' },
+    { id: 6, date: '2025-06-04', title: 'Lab 3 Due', type: 'assignment', color: '#dc3545' },
+    { id: 7, date: '2025-06-06', title: 'Team Meeting', type: 'meeting', color: '#28a745' },
   ];
 
   const monthNames = [
@@ -79,8 +79,14 @@ export default function Calendar() {
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-          onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
+          onMouseOver={(e) => {
+            const target = e.target as HTMLElement;
+            target.style.backgroundColor = '#f8f9fa';
+          }}
+          onMouseOut={(e) => {
+            const target = e.target as HTMLElement;
+            target.style.backgroundColor = 'white';
+          }}
         >
           <div style={{
             fontSize: '14px',
@@ -128,7 +134,7 @@ export default function Calendar() {
 
   return (
     <div style={{ 
-      marginLeft: '240px',
+      marginLeft: '240px', // Account for fixed navbar
       padding: '30px',
       backgroundColor: '#f8f9fa',
       minHeight: '100vh'
@@ -181,12 +187,14 @@ export default function Calendar() {
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#e9ecef';
-                e.target.style.borderColor = '#adb5bd';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = '#e9ecef';
+                target.style.borderColor = '#adb5bd';
               }}
               onMouseOut={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.borderColor = '#e9ecef';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = 'transparent';
+                target.style.borderColor = '#e9ecef';
               }}
             >
               ←
@@ -214,12 +222,14 @@ export default function Calendar() {
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#e9ecef';
-                e.target.style.borderColor = '#adb5bd';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = '#e9ecef';
+                target.style.borderColor = '#adb5bd';
               }}
               onMouseOut={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.borderColor = '#e9ecef';
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = 'transparent';
+                target.style.borderColor = '#e9ecef';
               }}
             >
               →
@@ -327,8 +337,14 @@ export default function Calendar() {
                     borderLeft: `4px solid ${event.color}`,
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+                  onMouseOver={(e) => {
+                    const target = e.target as HTMLElement;
+                    target.style.backgroundColor = '#e9ecef';
+                  }}
+                  onMouseOut={(e) => {
+                    const target = e.target as HTMLElement;
+                    target.style.backgroundColor = '#f8f9fa';
+                  }}
                 >
                   <div style={{
                     fontWeight: '600',
