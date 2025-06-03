@@ -1,4 +1,3 @@
-import { courses } from "../Database";
 import { FaAlignJustify } from "react-icons/fa6";
 import { Navigate, Route, Routes, useParams, useLocation } from "react-router";
 import CourseNavigation from "./Navigation";
@@ -11,11 +10,12 @@ import PiazzaDiscussions from "./Piazza";
 import Zoom from "./Zoom";
 import Quizzes from "./Quizzes";
 
-export default function Courses() {
+export default function Courses({ courses }: { courses: any[] }) {
   const { cid } = useParams();
+  // Find course from the shared courses state instead of database
   const course = courses.find((course: { _id: string | undefined; }) => course._id === cid);
   const { pathname } = useLocation();
-
+  
   return (
     <div id="wd-courses">
       {/* Course Header - Fixed at top */}
