@@ -1,12 +1,52 @@
-import { Button, Dropdown } from "react-bootstrap";
-import { FaEllipsisV, FaPlus, FaCheckCircle, FaGripVertical } from "react-icons/fa";
+import { Button, Dropdown, Modal, Form } from "react-bootstrap";
+import { FaEllipsisV, FaPlus, FaCheckCircle, FaGripVertical, FaTrash, FaPencil } from "react-icons/fa";
 import { useParams } from "react-router";
+import { useState } from "react";
 import * as db from "../../Database";
 
 export default function Modules() {
   const { cid } = useParams();
-  const modules = db.modules.filter((module: any) => module.course === cid);
+  const [modules, setModules] = useState<any[]>(db.modules);
+  const [moduleName, setModuleName] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const course = db.courses.find((course: any) => course._id === cid);
+
+  // Add new module
+  const addModule = () => {
+    if (moduleName.trim()) {
+      const newModule = {
+        _id: new Date().getTime().toString(),
+        name: moduleName,
+        course: cid,
+        lessons: []
+      };
+      setModules([...modules, newModule]);
+      setModuleName("");
+      setShowModal(false);
+    }
+  };
+
+  // Delete module
+  const deleteModule = (moduleId: string) => {
+    setModules(modules.filter((m) => m._id !== moduleId));
+  };
+
+  // Edit module (toggle editing mode)
+  const editModule = (moduleId: string) => {
+    setModules(modules.map((m) => 
+      m._id === moduleId ? { ...m, editing: true } : m
+    ));
+  };
+
+  // Update module
+  const updateModule = (module: any) => {
+    setModules(modules.map((m) => 
+      m._id === module._id ? module : m
+    ));
+  };
+
+  // Filter modules for current course
+  const courseModules = modules.filter((module: any) => module.course === cid);
 
   return (
     <div className="container-fluid" style={{ padding: '30px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
@@ -88,6 +128,7 @@ export default function Modules() {
             <Button 
               variant="danger" 
               className="ms-auto"
+              onClick={() => setShowModal(true)}
               style={{ 
                 padding: '10px 20px',
                 borderRadius: '8px',
@@ -101,9 +142,9 @@ export default function Modules() {
             </Button>
           </div>
 
-          {/* Dynamic Modules from Database */}
-          {modules.length > 0 ? (
-            modules.map((module: any) => (
+          {/* Dynamic Modules from State */}
+          {courseModules.length > 0 ? (
+            courseModules.map((module: any) => (
               <div 
                 key={module._id} 
                 className="mb-4" 
@@ -124,11 +165,42 @@ export default function Modules() {
                     borderBottom: '1px solid #dee2e6'
                   }}
                 >
-                  <div className="d-flex align-items-center">
+                  <div className="d-flex align-items-center flex-grow-1">
                     <FaGripVertical className="me-3 text-muted" size={16} />
-                    <span className="fw-bold fs-5 text-dark">{module.name}</span>
+                    {!module.editing ? (
+                      <span className="fw-bold fs-5 text-dark">{module.name}</span>
+                    ) : (
+                      <Form.Control
+                        type="text"
+                        defaultValue={module.name}
+                        className="w-50"
+                        autoFocus
+                        onChange={(e) => updateModule({ ...module, name: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateModule({ ...module, editing: false });
+                          }
+                        }}
+                        onBlur={() => updateModule({ ...module, editing: false })}
+                        style={{ display: 'inline-block' }}
+                      />
+                    )}
                   </div>
                   <div className="d-flex align-items-center gap-3">
+                    <FaPencil 
+                      className="text-primary" 
+                      size={16} 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => editModule(module._id)}
+                      title="Edit module"
+                    />
+                    <FaTrash 
+                      className="text-danger" 
+                      size={16} 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => deleteModule(module._id)}
+                      title="Delete module"
+                    />
                     <FaCheckCircle className="text-success" size={18} />
                     <FaPlus className="text-muted" size={16} style={{ cursor: 'pointer' }} />
                     <FaEllipsisV className="text-muted" size={16} style={{ cursor: 'pointer' }} />
@@ -182,7 +254,7 @@ export default function Modules() {
             >
               <h4 style={{ color: '#6c757d', marginBottom: '10px' }}>No modules found</h4>
               <p style={{ color: '#6c757d' }}>
-                This course doesn't have any modules yet. Check your modules database or create some modules for course ID: {cid}
+                This course doesn't have any modules yet. Click the "+ Module" button to create your first module.
               </p>
             </div>
           )}
@@ -339,6 +411,40 @@ export default function Modules() {
           </div>
         </div>
       </div>
+
+      {/* Add Module Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Module</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Module Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter module name..."
+                value={moduleName}
+                onChange={(e) => setModuleName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    addModule();
+                  }
+                }}
+                autoFocus
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={addModule}>
+            Add Module
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
