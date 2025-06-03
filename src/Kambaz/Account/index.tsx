@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import Signin from "./Signin";
 import Profile from "./Profile";
+import Signup from "./Signup"; // Import your existing Signup component
 
 export default function Account() {
   return (
@@ -12,6 +13,9 @@ export default function Account() {
         <Link to="/Kambaz/Account/Signin" style={{ marginRight: '15px' }}>
           Sign In
         </Link>
+        <Link to="/Kambaz/Account/Signup" style={{ marginRight: '15px' }}>
+          Signup
+        </Link>
         <Link to="/Kambaz/Account/Profile">
           Profile
         </Link>
@@ -20,6 +24,7 @@ export default function Account() {
       <Routes>
         <Route path="/" element={<Navigate to="/Kambaz/Account/Signin" />} />
         <Route path="/Signin" element={<Signin />} />
+        <Route path="/Signup" element={<Signup />} />
         <Route path="/Profile" element={<Profile />} />
       </Routes>
     </div>
