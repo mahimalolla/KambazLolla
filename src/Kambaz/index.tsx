@@ -4,6 +4,8 @@ import KambazNavigation from "./Navigation";
 import Dashboard from "./Dashboard";
 import Courses from "./Courses";
 import Account from "./Account";
+import Calendar from "./Calendar";
+import Inbox from "./Inbox";
 import * as db from "./Database";
 
 export default function Kambaz() {
@@ -66,8 +68,8 @@ export default function Kambaz() {
             path="Courses/:cid/*"
             element={<Courses courses={courses} />}
           />
-          <Route path="Calendar" element={<h1>Calendar</h1>} />
-          <Route path="Inbox" element={<h1>Inbox</h1>} />
+          <Route path="Calendar" element={<Calendar />} />
+          <Route path="Inbox" element={<Inbox />} />
         </Routes>
       </div>
     </div>
