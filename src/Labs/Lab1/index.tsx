@@ -101,7 +101,7 @@ export default function Lab1() {
       <div id="wd-anchor">
         <h4>Links</h4>
         <a href="https://google.com" target="_blank" rel="noreferrer">Google</a><br />
-        <a href="https://github.com/mahimalolla/kambaz-react-web-app-lolla" target="_blank" rel="noreferrer">My GitHub</a>
+        <a href="https://github.com/mahimalolla" target="_blank" rel="noreferrer">My GitHub</a>
       </div>
 
       {/* Forms */}
@@ -158,7 +158,7 @@ export default function Lab1() {
         <li><a href="/Labs/Lab2">Lab 2</a></li>
         <li><a href="/Labs/Lab3">Lab 3</a></li>
         <li><a href="/Kambaz/Account">Kambaz App</a></li>
-        <li><a href="https://github.com/mahimalolla/kambaz-react-web-app-lolla" target="_blank" rel="noreferrer">GitHub Repository</a></li>
+        <li><a href="https://github.com/mahimalolla" target="_blank" rel="noreferrer">GitHub Repository</a></li>
       </ul>
     </div>
   );
