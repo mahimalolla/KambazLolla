@@ -17,6 +17,7 @@ export default function Profile() {
 
   return (
     <div style={{
+      marginLeft: '240px', // Account for navigation width
       minHeight: '100vh',
       backgroundColor: '#f8fafc',
       padding: '40px 20px'
