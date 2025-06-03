@@ -1,5 +1,6 @@
 import { Button, Dropdown, Modal, Form } from "react-bootstrap";
-import { FaEllipsisV, FaPlus, FaCheckCircle, FaGripVertical, FaTrash, FaPencil } from "react-icons/fa";
+import { FaEllipsisV, FaPlus, FaCheckCircle, FaGripVertical, FaTrash } from "react-icons/fa";
+import { FaPencil } from "react-icons/fa6";
 import { useParams } from "react-router";
 import { useState } from "react";
 import * as db from "../../Database";
