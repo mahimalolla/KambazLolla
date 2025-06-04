@@ -1,11 +1,53 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { setCurrentUser } from "./reducer";
+import * as db from "../Database";
 
 export default function Signin() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const signin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    // Basic validation
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Find user in database
+      const user = db.users.find(
+        (u: any) => u.username === username && u.password === password
+      );
+
+      if (!user) {
+        setError("Invalid username or password");
+        setIsLoading(false);
+        return;
+      }
+
+      // Success - store user in Redux and navigate
+      dispatch(setCurrentUser(user));
+      navigate("/Kambaz/Dashboard");
+      
+    } catch (err) {
+      setError("An error occurred during sign in");
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div style={{
@@ -66,8 +108,44 @@ export default function Signin() {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            fontSize: '0.9rem',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Test Accounts Info */}
+        <div style={{
+          backgroundColor: '#f0f9ff',
+          border: '1px solid #bae6fd',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '20px',
+          fontSize: '0.85rem'
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#0369a1' }}>
+            Test Accounts:
+          </p>
+          <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
+            <strong>Faculty:</strong> alice_johnson / password123
+          </p>
+          <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
+            <strong>Student:</strong> bob_smith / password123
+          </p>
+        </div>
+
         {/* Sign In Form */}
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={signin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Username Field */}
           <div>
             <label style={{
@@ -95,6 +173,8 @@ export default function Signin() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="wd-username"
+                required
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -103,7 +183,8 @@ export default function Signin() {
                   fontSize: '1rem',
                   transition: 'all 0.2s ease',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  backgroundColor: isLoading ? '#f9fafb' : 'white'
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#4f46e5';
@@ -144,6 +225,8 @@ export default function Signin() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="wd-password"
+                required
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 45px 12px 40px',
@@ -152,7 +235,8 @@ export default function Signin() {
                   fontSize: '1rem',
                   transition: 'all 0.2s ease',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  backgroundColor: isLoading ? '#f9fafb' : 'white'
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#4f46e5';
@@ -166,6 +250,7 @@ export default function Signin() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -174,7 +259,7 @@ export default function Signin() {
                   background: 'none',
                   border: 'none',
                   color: '#9ca3af',
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
                   padding: '4px'
                 }}
               >
@@ -213,36 +298,58 @@ export default function Signin() {
           </div>
 
           {/* Sign In Button */}
-          <Link
-            to="/Kambaz/Dashboard"
+          <button
+            type="submit"
             id="wd-signin-btn"
+            disabled={isLoading}
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              background: isLoading 
+                ? 'linear-gradient(135deg, #9ca3af, #6b7280)' 
+                : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
               padding: '14px',
               fontSize: '1rem',
               fontWeight: '600',
-              cursor: 'pointer',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
               marginTop: '8px',
-              textDecoration: 'none',
-              display: 'block',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(79, 70, 229, 0.3)';
+              if (!isLoading) {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(79, 70, 229, 0.3)';
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              if (!isLoading) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }
             }}
           >
-            Sign In
-          </Link>
+            {isLoading ? (
+              <>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid #ffffff',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                Signing In...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
         </form>
 
         {/* Sign Up Link */}
@@ -267,6 +374,16 @@ export default function Signin() {
           </p>
         </div>
       </div>
+
+      {/* Add CSS animation for loading spinner */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 }
