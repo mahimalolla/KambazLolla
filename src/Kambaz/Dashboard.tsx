@@ -1,4 +1,3 @@
-// src/Kambaz/Dashboard.tsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import * as db from "./Database";
@@ -37,7 +36,11 @@ export default function Dashboard(props: any) {
   // Show loading or signin message if no user
   if (!currentUser) {
     return (
-      <div className="container mt-4">
+      <div style={{ 
+        marginLeft: '320px', // Account for sidebar width
+        padding: '20px',
+        minHeight: '100vh'
+      }}>
         <div className="alert alert-warning">
           <h4>Authentication Required</h4>
           <p>Please sign in to view your dashboard.</p>
@@ -50,103 +53,122 @@ export default function Dashboard(props: any) {
   }
 
   return (
-    <div id="wd-dashboard" className="p-4">
-      <h1 id="wd-dashboard-title">Dashboard</h1>
-      
-      {/* Debug Panel - REMOVE AFTER TESTING */}
-      <div className="alert alert-info mb-4">
-        <h5>🔍 Debug Info (Remove this after testing)</h5>
-        <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} ({currentUser.username})<br />
-        <strong>Role:</strong> {currentUser.role}<br />
-        <strong>Is Faculty:</strong> {isFaculty ? '✅ YES' : '❌ NO'}<br />
-        <strong>Is Student:</strong> {isStudent ? '✅ YES' : '❌ NO'}<br />
-        <strong>User ID:</strong> {currentUser._id}<br />
-        <strong>Enrolled Courses:</strong> {enrolledCourses.length}
-      </div>
+    <div style={{ 
+      marginLeft: '320px', // Account for sidebar width
+      padding: '20px',
+      minHeight: '100vh',
+      backgroundColor: '#f8f9fa'
+    }}>
+      <div className="container-fluid">
+        <h1 id="wd-dashboard-title">Dashboard</h1>
+        
+        {/* Debug Panel - REMOVE AFTER TESTING */}
+        <div className="alert alert-info mb-4">
+          <h5>🔍 Debug Info (Remove this after testing)</h5>
+          <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} ({currentUser.username})<br />
+          <strong>Role:</strong> {currentUser.role}<br />
+          <strong>Is Faculty:</strong> {isFaculty ? '✅ YES' : '❌ NO'}<br />
+          <strong>Is Student:</strong> {isStudent ? '✅ YES' : '❌ NO'}<br />
+          <strong>User ID:</strong> {currentUser._id}<br />
+          <strong>Enrolled Courses:</strong> {enrolledCourses.length}
+        </div>
 
-      {/* FACULTY-ONLY: Course Creation Section */}
-      {isFaculty && (
-        <div className="mb-4 p-3 border rounded bg-light">
-          <h5 className="text-success">
-            👨‍🏫 Faculty Controls
-            <button 
-              className="btn btn-primary float-end"
-              id="wd-add-new-course-click"
-              onClick={props.addNewCourse}
-            >
-              Add Course
-            </button>
-            <button 
-              className="btn btn-warning float-end me-2"
-              id="wd-update-course-click"
-              onClick={props.updateCourse}
-            >
-              Update Course
-            </button>
-          </h5>
-          
-          <div className="mt-3">
-            <input 
-              type="text"
-              value={props.course?.name || ""} 
-              onChange={(e) => props.setCourse({...props.course, name: e.target.value})}
-              className="form-control mb-2" 
-              placeholder="Course Name"
-              id="wd-course-name"
-            />
-            <textarea 
-              value={props.course?.description || ""}
-              onChange={(e) => props.setCourse({...props.course, description: e.target.value})}
-              className="form-control mb-2" 
-              placeholder="Course Description"
-              rows={3}
-              id="wd-course-description"
-            />
+        {/* FACULTY-ONLY: Course Creation Section */}
+        {isFaculty && (
+          <div className="mb-4 p-4 border rounded bg-white shadow-sm">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="text-success mb-0">
+                👨‍🏫 Faculty Controls
+              </h5>
+              <div>
+                <button 
+                  className="btn btn-warning me-2"
+                  id="wd-update-course-click"
+                  onClick={props.updateCourse}
+                >
+                  Update Course
+                </button>
+                <button 
+                  className="btn btn-primary"
+                  id="wd-add-new-course-click"
+                  onClick={props.addNewCourse}
+                >
+                  Add Course
+                </button>
+              </div>
+            </div>
+            
+            <div className="row">
+              <div className="col-md-6">
+                <input 
+                  type="text"
+                  value={props.course?.name || ""} 
+                  onChange={(e) => props.setCourse({...props.course, name: e.target.value})}
+                  className="form-control mb-3" 
+                  placeholder="Course Name"
+                  id="wd-course-name"
+                />
+              </div>
+              <div className="col-md-6">
+                <textarea 
+                  value={props.course?.description || ""}
+                  onChange={(e) => props.setCourse({...props.course, description: e.target.value})}
+                  className="form-control mb-3" 
+                  placeholder="Course Description"
+                  rows={3}
+                  id="wd-course-description"
+                />
+              </div>
+            </div>
           </div>
-          <hr />
+        )}
+
+        {/* STUDENT-ONLY: Welcome Message */}
+        {isStudent && (
+          <div className="alert alert-primary mb-4">
+            <h5>👨‍🎓 Welcome, {currentUser.firstName}!</h5>
+            <p className="mb-0">You're viewing your enrolled courses. Contact your instructor to make changes.</p>
+          </div>
+        )}
+
+        {/* Courses Section */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h2 id="wd-dashboard-published" className="mb-0">
+            Published Courses ({enrolledCourses.length})
+          </h2>
         </div>
-      )}
+        <hr />
 
-      {/* STUDENT-ONLY: Welcome Message */}
-      {isStudent && (
-        <div className="alert alert-primary mb-4">
-          <h5>👨‍🎓 Welcome, {currentUser.firstName}!</h5>
-          <p>You're viewing your enrolled courses. Contact your instructor to make changes.</p>
-        </div>
-      )}
-
-      {/* Courses Section */}
-      <h2 id="wd-dashboard-published">
-        Published Courses ({enrolledCourses.length})
-      </h2>
-      <hr />
-
-      <div className="row" id="wd-dashboard-courses">
-        <div className="row row-cols-1 row-cols-md-5 g-4">
+        {/* Courses Grid */}
+        <div className="row g-4" id="wd-dashboard-courses">
           {enrolledCourses.map((course: any) => (
-            <div key={course._id} className="col" style={{ width: "300px" }}>
-              <div className="card rounded-3 overflow-hidden">
+            <div key={course._id} className="col-lg-3 col-md-4 col-sm-6">
+              <div className="card h-100 shadow-sm">
                 <Link 
-                  className="wd-dashboard-course-link text-decoration-none text-dark"
+                  className="text-decoration-none"
                   to={`/Kambaz/Courses/${course._id}/Home`}
                 >
                   <img 
                     src={course.image || "/images/reactjs.jpg"} 
                     className="card-img-top"
-                    style={{ height: 160 }}
+                    style={{ height: 160, objectFit: 'cover' }}
                     alt={course.name}
                   />
                   <div className="card-body">
-                    <h5 className="wd-dashboard-course-title card-title">
+                    <h5 className="card-title text-dark">
                       {course.name}
                     </h5>
-                    <p className="wd-dashboard-course-title card-text overflow-y-hidden" 
-                       style={{ maxHeight: 100 }}>
+                    <p className="card-text text-muted" 
+                       style={{ 
+                         maxHeight: 60, 
+                         overflow: 'hidden',
+                         fontSize: '0.9rem'
+                       }}>
                       {course.description}
                     </p>
                     
-                    <div className="d-flex align-items-center justify-content-between">
-                      <button className="btn btn-primary">Go</button>
+                    <div className="d-flex align-items-center justify-content-between mt-3">
+                      <span className="btn btn-primary btn-sm">Go</span>
                       
                       {/* Role indicator */}
                       <small className="text-muted">
@@ -158,7 +180,7 @@ export default function Dashboard(props: any) {
 
                 {/* FACULTY-ONLY: Edit Controls */}
                 {isFaculty && (
-                  <div className="card-footer bg-transparent">
+                  <div className="card-footer bg-transparent border-top">
                     <div className="d-flex gap-2">
                       <button 
                         onClick={(event) => {
@@ -188,7 +210,7 @@ export default function Dashboard(props: any) {
 
                 {/* STUDENT-ONLY: View Only Message */}
                 {isStudent && (
-                  <div className="card-footer bg-transparent">
+                  <div className="card-footer bg-transparent border-top">
                     <small className="text-muted d-block text-center">
                       👀 View Only - Student Access
                     </small>
@@ -198,30 +220,30 @@ export default function Dashboard(props: any) {
             </div>
           ))}
         </div>
-      </div>
 
-      {/* No Courses Message */}
-      {enrolledCourses.length === 0 && (
-        <div className="alert alert-info">
-          <h5>No Courses Found</h5>
-          <p>
-            {isFaculty 
-              ? "You don't have any courses assigned. Use the form above to create a new course."
-              : "You're not enrolled in any courses. Contact your administrator for enrollment."
-            }
-          </p>
+        {/* No Courses Message */}
+        {enrolledCourses.length === 0 && (
+          <div className="alert alert-info mt-4">
+            <h5>No Courses Found</h5>
+            <p className="mb-0">
+              {isFaculty 
+                ? "You don't have any courses assigned. Use the form above to create a new course."
+                : "You're not enrolled in any courses. Contact your administrator for enrollment."
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Testing Instructions */}
+        <div className="alert alert-secondary mt-5">
+          <h6>🧪 Testing Instructions:</h6>
+          <ul className="mb-0">
+            <li><strong>alice_johnson (Faculty):</strong> Should see course creation form and edit buttons</li>
+            <li><strong>bob_smith (Student):</strong> Should see welcome message and "View Only" on courses</li>
+            <li><strong>charlie_wilson (Faculty):</strong> Should see course creation form and edit buttons</li>
+            <li><strong>diana_prince (Student):</strong> Should see welcome message and "View Only" on courses</li>
+          </ul>
         </div>
-      )}
-
-      {/* Testing Instructions */}
-      <div className="alert alert-secondary mt-4">
-        <h6>🧪 Testing Instructions:</h6>
-        <ul className="mb-0">
-          <li><strong>alice_johnson (Faculty):</strong> Should see course creation form and edit buttons</li>
-          <li><strong>bob_smith (Student):</strong> Should see welcome message and "View Only" on courses</li>
-          <li><strong>charlie_wilson (Faculty):</strong> Should see course creation form and edit buttons</li>
-          <li><strong>diana_prince (Student):</strong> Should see welcome message and "View Only" on courses</li>
-        </ul>
       </div>
     </div>
   );
