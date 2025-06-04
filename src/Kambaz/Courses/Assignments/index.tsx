@@ -1,211 +1,336 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
-import Breadcrumbs from "../Breadcrumbs";
-import { FaPlus, FaRocket, FaClipboardList, FaSearch } from "react-icons/fa";
-import { BsThreeDotsVertical } from "react-icons/bs";
+import { useParams } from "react-router";
+import { Button, Modal, Form, Table } from "react-bootstrap";
+import { FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import * as db from "../../Database";
 
-const assignments = [
-  { 
-    _id: "Q5", 
-    title: "Q5", 
-    type: "quiz",
-    availableUntil: "Jun 2 at 11:59pm",
-    due: "Jun 2 at 11:59pm", 
-    points: -31,
-    status: "available"
-  },
-  { 
-    _id: "A4", 
-    title: "A4", 
-    type: "assignment",
-    due: "Jun 3 at 11:59pm", 
-    points: -100,
-    status: "available"
-  },
-  { 
-    _id: "X1", 
-    title: "X1", 
-    type: "quiz",
-    availableUntil: "Jun 4 at 11:59pm",
-    due: "Jun 4 at 11:59pm", 
-    points: -100,
-    status: "available"
-  },
-  { 
-    _id: "Q6", 
-    title: "Q6", 
-    type: "quiz",
-    availableUntil: "Jun 3 at 12am",
-    due: "Jun 9 at 11:59pm", 
-    points: -18,
-    status: "not_available"
-  },
-  { 
-    _id: "A5", 
-    title: "A5", 
-    type: "assignment",
-    due: "Jun 10 at 11:59pm", 
-    points: -100,
-    status: "available"
-  },
-  { 
-    _id: "Q7", 
-    title: "Q7", 
-    type: "quiz",
-    availableUntil: "Jun 5 at 12am",
-    due: "Jun 11 at 11:59pm", 
-    points: "0/20",
-    status: "not_available"
-  },
-  { 
-    _id: "Q8", 
-    title: "Q8", 
-    type: "quiz",
-    availableUntil: "Jun 10 at 12am",
-    due: "Jun 16 at 11:59pm", 
-    points: -25,
-    status: "not_available"
-  },
-  { 
-    _id: "A6", 
-    title: "A6", 
-    type: "assignment",
-    due: "Jun 17 at 11:59pm", 
-    points: -100,
-    status: "not_available"
-  }
-];
+interface Assignment {
+  _id: string;
+  title: string;
+  course: string;
+  availableFrom: string;
+  availableUntil: string;
+  dueDate: string;
+  points: number;
+  description?: string;
+}
 
-export default function AssignmentList() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewBy, setViewBy] = useState("date");
+export default function Assignments() {
+  const { cid } = useParams();
+  const [assignments, setAssignments] = useState<Assignment[]>(db.assignments || []);
+  const [showModal, setShowModal] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [assignmentForm, setAssignmentForm] = useState<Assignment>({
+    _id: "",
+    title: "",
+    course: cid || "",
+    availableFrom: new Date().toISOString().split('T')[0],
+    availableUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    points: 100,
+    description: ""
+  });
 
-  const getIcon = (type: string) => {
-    if (type === "quiz") {
-      return <FaRocket className="text-secondary" size={16} />;
+  // Filter assignments for current course
+  const courseAssignments = assignments.filter((assignment: Assignment) => assignment.course === cid);
+
+  // Add new assignment
+  const addAssignment = () => {
+    if (assignmentForm.title.trim()) {
+      const newAssignment: Assignment = {
+        ...assignmentForm,
+        _id: new Date().getTime().toString(),
+        course: cid || ""
+      };
+      setAssignments([...assignments, newAssignment]);
+      resetForm();
+      setShowModal(false);
     }
-    return <FaClipboardList className="text-secondary" size={16} />;
   };
 
-  const getStatusText = (assignment: any) => {
-    if (assignment.status === "not_available") {
-      return `Not available until ${assignment.availableUntil}`;
+  // Update assignment
+  const updateAssignment = () => {
+    if (editingAssignment && assignmentForm.title.trim()) {
+      setAssignments(assignments.map(a => 
+        a._id === editingAssignment._id ? { ...assignmentForm, _id: editingAssignment._id } : a
+      ));
+      resetForm();
+      setShowModal(false);
     }
-    if (assignment.availableUntil) {
-      return `Available until ${assignment.availableUntil}`;
-    }
-    return "";
   };
 
-  const filteredAssignments = assignments.filter(assignment =>
-    assignment.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Delete assignment
+  const deleteAssignment = (assignmentId: string) => {
+    if (window.confirm("Are you sure you want to delete this assignment?")) {
+      setAssignments(assignments.filter(a => a._id !== assignmentId));
+    }
+  };
+
+  // Edit assignment
+  const editAssignment = (assignment: Assignment) => {
+    setEditingAssignment(assignment);
+    setAssignmentForm({ ...assignment });
+    setShowModal(true);
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setEditingAssignment(null);
+    setAssignmentForm({
+      _id: "",
+      title: "",
+      course: cid || "",
+      availableFrom: new Date().toISOString().split('T')[0],
+      availableUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      points: 100,
+      description: ""
+    });
+  };
+
+  // Open add modal
+  const openAddModal = () => {
+    resetForm();
+    setShowModal(true);
+  };
 
   return (
-    <div className="container-fluid px-4 py-3">
-      <Breadcrumbs />
-      
-      {/* Header with Search and Filters */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <div className="position-relative" style={{ minWidth: '300px', maxWidth: '400px' }}>
-          <FaSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={14} />
-          <input 
-            type="text" 
-            className="form-control ps-5 border-0 bg-light rounded-pill"
-            placeholder="Search..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ fontSize: '14px' }}
-          />
-        </div>
-        
-        <div className="d-flex gap-2">
-          <button 
-            className={`btn ${viewBy === 'date' ? 'btn-success' : 'btn-outline-secondary'} btn-sm px-3`}
-            onClick={() => setViewBy('date')}
-            style={{ fontSize: '13px', fontWeight: '500' }}
-          >
-            SHOW BY DATE
-          </button>
-          <button 
-            className={`btn ${viewBy === 'type' ? 'btn-success' : 'btn-outline-secondary'} btn-sm px-3`}
-            onClick={() => setViewBy('type')}
-            style={{ fontSize: '13px', fontWeight: '500' }}
-          >
-            SHOW BY TYPE
-          </button>
-        </div>
+    <div style={{
+      padding: '30px',
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '30px'
+      }}>
+        <h1 style={{ color: '#212529', marginBottom: 0 }}>📚 Assignments</h1>
+        <Button
+          variant="danger"
+          onClick={openAddModal}
+          style={{
+            padding: '12px 24px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <FaPlus /> Assignment
+        </Button>
       </div>
 
-      {/* Upcoming Assignments Section */}
-      <div className="bg-light rounded p-3 mb-4">
-        <div className="d-flex align-items-center mb-3">
-          <span 
-            className="me-2 text-dark cursor-pointer" 
-            style={{ fontSize: '12px', cursor: 'pointer' }}
-          >
-            ▼
-          </span>
-          <h6 className="mb-0 fw-semibold text-dark" style={{ fontSize: '15px' }}>
-            Upcoming Assignments
-          </h6>
-        </div>
+      {/* Assignment Controls */}
+      <div style={{
+        display: 'flex',
+        gap: '15px',
+        marginBottom: '30px'
+      }}>
+        <Button variant="outline-secondary">
+          📊 40% of Total
+        </Button>
+        <Button variant="outline-secondary">
+          🔍 Search for Assignment
+        </Button>
+        <Button variant="outline-secondary">
+          ➕ Group
+        </Button>
+      </div>
 
-        {/* Assignment List */}
-        <div className="list-group list-group-flush">
-          {filteredAssignments.map((assignment, index) => (
-            <div 
-              key={assignment._id} 
-              className={`list-group-item border-0 px-0 py-3 ${index !== filteredAssignments.length - 1 ? 'border-bottom' : ''}`}
-              style={{ backgroundColor: 'transparent' }}
-            >
-              <div className="d-flex align-items-start">
-                <div className="me-3 mt-1">
-                  {getIcon(assignment.type)}
-                </div>
-                
-                <div className="flex-grow-1">
-                  <div className="d-flex justify-content-between align-items-start mb-1">
-                    <Link 
-                      to={`/Kambaz/Assignments/${assignment._id}`}
-                      className="text-decoration-none text-primary fw-semibold"
-                      style={{ fontSize: '15px' }}
-                    >
-                      {assignment.title}
-                    </Link>
-                    <BsThreeDotsVertical className="text-muted" style={{ cursor: 'pointer' }} size={14} />
-                  </div>
-                  
-                  <div className="text-muted" style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                    {getStatusText(assignment) && (
-                      <span>{getStatusText(assignment)} | </span>
-                    )}
-                    <span>Due {assignment.due} | </span>
-                    <span>
-                      {typeof assignment.points === 'string' 
-                        ? assignment.points + ' pts'
-                        : Math.abs(assignment.points) + ' pts'
-                      }
-                    </span>
-                  </div>
-                </div>
+      {/* Assignments Table */}
+      {courseAssignments.length > 0 ? (
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <Table hover style={{ margin: 0 }}>
+            <thead style={{ backgroundColor: '#f8f9fa' }}>
+              <tr>
+                <th style={{ padding: '20px', fontWeight: '600' }}>Assignment Name</th>
+                <th style={{ padding: '20px', fontWeight: '600' }}>Due Date</th>
+                <th style={{ padding: '20px', fontWeight: '600' }}>Points</th>
+                <th style={{ padding: '20px', fontWeight: '600' }}>Available</th>
+                <th style={{ padding: '20px', fontWeight: '600', textAlign: 'center' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courseAssignments.map((assignment) => (
+                <tr key={assignment._id}>
+                  <td style={{ padding: '20px' }}>
+                    <div>
+                      <strong style={{ color: '#212529', fontSize: '16px' }}>
+                        {assignment.title}
+                      </strong>
+                      {assignment.description && (
+                        <div style={{ 
+                          color: '#6c757d', 
+                          fontSize: '14px', 
+                          marginTop: '4px',
+                          maxWidth: '300px'
+                        }}>
+                          {assignment.description}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: '20px', color: '#6c757d' }}>
+                    {new Date(assignment.dueDate).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: '20px', fontWeight: '500' }}>
+                    {assignment.points} pts
+                  </td>
+                  <td style={{ padding: '20px', color: '#6c757d', fontSize: '14px' }}>
+                    {new Date(assignment.availableFrom).toLocaleDateString()} - {new Date(assignment.availableUntil).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: '20px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => editAssignment(assignment)}
+                        title="Edit Assignment"
+                      >
+                        <FaEdit />
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => deleteAssignment(assignment._id)}
+                        title="Delete Assignment"
+                      >
+                        <FaTrash />
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        title="View Assignment"
+                      >
+                        <FaEye />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      ) : (
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '60px',
+          textAlign: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📝</div>
+          <h4 style={{ color: '#6c757d', marginBottom: '15px' }}>No assignments found</h4>
+          <p style={{ color: '#6c757d', marginBottom: '20px' }}>
+            This course doesn't have any assignments yet. Click the "+ Assignment" button to create your first assignment.
+          </p>
+          <Button variant="primary" onClick={openAddModal}>
+            <FaPlus className="me-2" />
+            Create First Assignment
+          </Button>
+        </div>
+      )}
+
+      {/* Assignment Editor Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editingAssignment ? 'Edit Assignment' : 'Add Assignment'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <div className="row">
+              <div className="col-md-8">
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontWeight: '500' }}>Assignment Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Enter assignment name..."
+                    value={assignmentForm.title}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })}
+                    autoFocus
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-4">
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontWeight: '500' }}>Points</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="100"
+                    value={assignmentForm.points}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, points: parseInt(e.target.value) || 0 })}
+                  />
+                </Form.Group>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Admin Controls (if needed) */}
-      <div className="d-flex gap-2 mt-4">
-        <button className="btn btn-primary btn-sm">
-          <FaPlus className="me-1" size={12} />
-          Assignment
-        </button>
-        <button className="btn btn-outline-secondary btn-sm">
-          <FaPlus className="me-1" size={12} />
-          Group
-        </button>
-      </div>
+            <Form.Group className="mb-3">
+              <Form.Label style={{ fontWeight: '500' }}>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Enter assignment description..."
+                value={assignmentForm.description}
+                onChange={(e) => setAssignmentForm({ ...assignmentForm, description: e.target.value })}
+              />
+            </Form.Group>
+
+            <div className="row">
+              <div className="col-md-4">
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontWeight: '500' }}>Available From</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={assignmentForm.availableFrom}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, availableFrom: e.target.value })}
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-4">
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontWeight: '500' }}>Due Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={assignmentForm.dueDate}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, dueDate: e.target.value })}
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-4">
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontWeight: '500' }}>Available Until</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={assignmentForm.availableUntil}
+                    onChange={(e) => setAssignmentForm({ ...assignmentForm, availableUntil: e.target.value })}
+                  />
+                </Form.Group>
+              </div>
+            </div>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={editingAssignment ? updateAssignment : addAssignment}
+          >
+            {editingAssignment ? 'Update Assignment' : 'Add Assignment'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
