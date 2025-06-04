@@ -11,16 +11,6 @@ export default function Dashboard(props: any) {
       const user = JSON.parse(stored);
       setCurrentUser(user);
       
-      // Debug logging - remove after testing
-      console.log('=== DASHBOARD DEBUG ===');
-      console.log('Stored user from localStorage:', user);
-      console.log('User role:', user.role);
-      console.log('Is Faculty check:', user.role === "FACULTY");
-      console.log('Is Student check:', user.role === "STUDENT");
-      console.log('=====================');
-    }
-  }, []);
-
   // Role checks
   const isFaculty = currentUser?.role === "FACULTY";
   const isStudent = currentUser?.role === "STUDENT";
