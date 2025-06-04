@@ -47,7 +47,6 @@ export default function Signin() {
     }
   };
 
-  // Rest of your beautiful styling stays the same...
   return (
     <div style={{
       marginLeft: '240px',
@@ -58,7 +57,6 @@ export default function Signin() {
       backgroundColor: '#f8fafc',
       padding: '20px'
     }}>
-      {/* Your existing JSX with the form */}
       <div style={{
         backgroundColor: 'white',
         borderRadius: '16px',
@@ -68,9 +66,43 @@ export default function Signin() {
         maxWidth: '420px',
         border: '1px solid #e2e8f0'
       }}>
-        {/* Header stays the same */}
+        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          {/* Your existing header */}
+          <div style={{
+            width: '80px',
+            height: '80px',
+            backgroundColor: '#4f46e5',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+            boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)'
+          }}>
+            <img 
+              src="https://upload.wikimedia.org/wikipedia/commons/b/bb/NU_RGB_seal_R.png"
+              alt="Northeastern University"
+              style={{
+                width: '60px',
+                height: '60px',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+          <h1 style={{
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#1a202c',
+            marginBottom: '8px'
+          }}>
+            Welcome Back
+          </h1>
+          <p style={{
+            color: '#718096',
+            fontSize: '1rem'
+          }}>
+            Sign in to your Kambaz account
+          </p>
         </div>
 
         {/* Error Message */}
@@ -109,9 +141,9 @@ export default function Signin() {
           </p>
         </div>
 
-        {/* Form with your existing styling */}
+        {/* Form */}
         <form onSubmit={signin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Username and Password fields - keep your existing styling */}
+          {/* Username Field */}
           <div>
             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
               Username
@@ -124,6 +156,7 @@ export default function Signin() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 required
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -131,12 +164,22 @@ export default function Signin() {
                   borderRadius: '8px',
                   fontSize: '1rem',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  backgroundColor: isLoading ? '#f9fafb' : 'white'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4f46e5';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = 'none';
                 }}
               />
             </div>
           </div>
 
+          {/* Password Field */}
           <div>
             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
               Password
@@ -149,6 +192,7 @@ export default function Signin() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 45px 12px 40px',
@@ -156,12 +200,22 @@ export default function Signin() {
                   borderRadius: '8px',
                   fontSize: '1rem',
                   outline: 'none',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  backgroundColor: isLoading ? '#f9fafb' : 'white'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4f46e5';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = 'none';
                 }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -170,7 +224,7 @@ export default function Signin() {
                   background: 'none',
                   border: 'none',
                   color: '#9ca3af',
-                  cursor: 'pointer'
+                  cursor: isLoading ? 'not-allowed' : 'pointer'
                 }}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -178,123 +232,108 @@ export default function Signin() {
             </div>
           </div>
 
+          {/* Remember Me */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.9rem'
+          }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              color: '#374151'
+            }}>
+              <input type="checkbox" style={{ margin: 0 }} />
+              Remember me
+            </label>
+            <Link
+              to="/Kambaz/Account/Profile"
+              style={{
+                color: '#4f46e5',
+                textDecoration: 'none',
+                fontWeight: '500'
+              }}
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          {/* Sign In Button */}
           <button
             type="submit"
             disabled={isLoading}
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              background: isLoading 
+                ? 'linear-gradient(135deg, #9ca3af, #6b7280)' 
+                : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
               padding: '14px',
               fontSize: '1rem',
               fontWeight: '600',
-              cursor: 'pointer'
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
           >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {isLoading ? (
+              <>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid #ffffff',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                Signing In...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
-      </div>
-    </div>
-  );
-}
 
-// Option 3: Create a simple hook to get current user from localStorage
-// You can add this to any component file that needs it
-const useCurrentUser = () => {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const stored = localStorage.getItem('kambaz_user');
-    return stored ? JSON.parse(stored) : null;
-  });
-
-  const isFaculty = currentUser?.role === "FACULTY";
-  const isStudent = currentUser?.role === "STUDENT";
-
-  const logout = () => {
-    localStorage.removeItem('kambaz_user');
-    setCurrentUser(null);
-  };
-
-  return { currentUser, isFaculty, isStudent, logout };
-};
-
-// Option 4: Use this in your Dashboard component
-// src/Kambaz/Dashboard.tsx
-import { useState, useEffect } from "react";
-import * as db from "./Database";
-
-export default function Dashboard(props: any) {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  useEffect(() => {
-    // Get user from localStorage
-    const stored = localStorage.getItem('kambaz_user');
-    if (stored) {
-      setCurrentUser(JSON.parse(stored));
-    }
-  }, []);
-
-  const isFaculty = currentUser?.role === "FACULTY";
-
-  // Filter courses by enrollment
-  const enrolledCourses = currentUser ? props.courses.filter((course: any) =>
-    db.enrollments.some((enrollment: any) => 
-      enrollment.user === currentUser._id && 
-      enrollment.course === course._id
-    )
-  ) : [];
-
-  if (!currentUser) {
-    return <div>Please sign in to view dashboard</div>;
-  }
-
-  return (
-    <div id="wd-dashboard">
-      <h1>Dashboard</h1>
-      <p>Welcome, {currentUser.firstName} {currentUser.lastName}!</p>
-      
-      {/* Only show course creation form to FACULTY */}
-      {isFaculty && (
-        <div>
-          <h5>New Course
-            <button className="btn btn-primary float-end" onClick={props.addNewCourse}>
-              Add
-            </button>
-          </h5>
-          {/* Your course form */}
+        {/* Sign Up Link */}
+        <div style={{
+          textAlign: 'center',
+          marginTop: '24px',
+          padding: '20px 0',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          <p style={{ color: '#718096', margin: 0 }}>
+            Don't have an account?{' '}
+            <Link
+              to="/Kambaz/Account/Signup"
+              style={{
+                color: '#4f46e5',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}
+            >
+              Sign up here
+            </Link>
+          </p>
         </div>
-      )}
-      
-      <h2>Published Courses ({enrolledCourses.length})</h2>
-      
-      <div className="row">
-        {enrolledCourses.map((course: any) => (
-          <div key={course._id} className="col">
-            <div className="card">
-              <div className="card-body">
-                <h5>{course.name}</h5>
-                <Link to={`/Kambaz/Courses/${course._id}`} className="btn btn-primary">
-                  Go
-                </Link>
-                
-                {/* Only FACULTY can edit/delete */}
-                {isFaculty && (
-                  <>
-                    <button onClick={() => props.setCourse(course)} className="btn btn-warning">
-                      Edit
-                    </button>
-                    <button onClick={() => props.deleteCourse(course._id)} className="btn btn-danger">
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
+
+      {/* CSS for loading animation */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 }
