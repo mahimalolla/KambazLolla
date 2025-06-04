@@ -10,7 +10,9 @@ export default function Dashboard(props: any) {
     if (stored) {
       const user = JSON.parse(stored);
       setCurrentUser(user);
-      
+    }
+  }, []);
+
   // Role checks
   const isFaculty = currentUser?.role === "FACULTY";
   const isStudent = currentUser?.role === "STUDENT";
@@ -27,7 +29,7 @@ export default function Dashboard(props: any) {
   if (!currentUser) {
     return (
       <div style={{ 
-        marginLeft: '320px', // Account for sidebar width
+        marginLeft: '320px',
         padding: '20px',
         minHeight: '100vh'
       }}>
@@ -44,24 +46,13 @@ export default function Dashboard(props: any) {
 
   return (
     <div style={{ 
-      marginLeft: '320px', // Account for sidebar width
+      marginLeft: '320px',
       padding: '20px',
       minHeight: '100vh',
       backgroundColor: '#f8f9fa'
     }}>
       <div className="container-fluid">
         <h1 id="wd-dashboard-title">Dashboard</h1>
-        
-        {/* Debug Panel - REMOVE AFTER TESTING */}
-        <div className="alert alert-info mb-4">
-          <h5>🔍 Debug Info (Remove this after testing)</h5>
-          <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} ({currentUser.username})<br />
-          <strong>Role:</strong> {currentUser.role}<br />
-          <strong>Is Faculty:</strong> {isFaculty ? '✅ YES' : '❌ NO'}<br />
-          <strong>Is Student:</strong> {isStudent ? '✅ YES' : '❌ NO'}<br />
-          <strong>User ID:</strong> {currentUser._id}<br />
-          <strong>Enrolled Courses:</strong> {enrolledCourses.length}
-        </div>
 
         {/* FACULTY-ONLY: Course Creation Section */}
         {isFaculty && (
@@ -223,17 +214,6 @@ export default function Dashboard(props: any) {
             </p>
           </div>
         )}
-
-        {/* Testing Instructions */}
-        <div className="alert alert-secondary mt-5">
-          <h6>🧪 Testing Instructions:</h6>
-          <ul className="mb-0">
-            <li><strong>alice_johnson (Faculty):</strong> Should see course creation form and edit buttons</li>
-            <li><strong>bob_smith (Student):</strong> Should see welcome message and "View Only" on courses</li>
-            <li><strong>charlie_wilson (Faculty):</strong> Should see course creation form and edit buttons</li>
-            <li><strong>diana_prince (Student):</strong> Should see welcome message and "View Only" on courses</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
