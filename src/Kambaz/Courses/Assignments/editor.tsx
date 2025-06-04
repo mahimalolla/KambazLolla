@@ -1,8 +1,10 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export default function AssignmentEditor() {
-  useParams();
+  const { cid } = useParams();
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [assignment, setAssignment] = useState({
     name: "A1",
     description: "The assignment is available online\n\nSubmit a link to the landing page of your Web application running on Netlify.\n\nThe landing page should include the following:\n\n• Your full name and section\n• Links to each of the lab assignments\n• Link to the Kambaz application\n• Links to all relevant source code repositories\n\nThe Kambaz application should include a link to navigate back to the landing page.",
@@ -23,6 +25,26 @@ export default function AssignmentEditor() {
     until: ""
   });
 
+  // Check authentication and role on component mount
+  useEffect(() => {
+    const stored = localStorage.getItem('kambaz_user');
+    if (!stored) {
+      // Not signed in - redirect to signin
+      navigate("/Kambaz/Account/Signin");
+      return;
+    }
+
+    const user = JSON.parse(stored);
+    setCurrentUser(user);
+
+    // If not faculty, redirect back to assignments
+    if (user.role !== "FACULTY") {
+      alert("Access Denied: Only faculty members can edit assignments.");
+      navigate(`/Kambaz/Courses/${cid}/Assignments`);
+      return;
+    }
+  }, [navigate, cid]);
+
   const handleInputChange = (field: string, value: string | number) => {
     setAssignment(prev => ({
       ...prev,
@@ -40,8 +62,60 @@ export default function AssignmentEditor() {
     }));
   };
 
+  const handleSave = () => {
+    // Add save functionality here
+    alert("Assignment saved successfully!");
+    navigate(`/Kambaz/Courses/${cid}/Assignments`);
+  };
+
+  const handleCancel = () => {
+    if (window.confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
+      navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    }
+  };
+
+  // Show loading while checking authentication
+  if (!currentUser) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // This shouldn't show if useEffect redirects properly, but just in case
+  if (currentUser.role !== "FACULTY") {
+    return (
+      <div className="container mt-4">
+        <div className="alert alert-danger">
+          <h4>🚫 Access Denied</h4>
+          <p>Only faculty members can create or edit assignments.</p>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate(`/Kambaz/Courses/${cid}/Assignments`)}
+          >
+            Back to Assignments
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      
+      {/* Faculty Access Confirmation */}
+      <div className="alert alert-success mb-4">
+        <h5>✅ Faculty Access Confirmed</h5>
+        <p className="mb-0">
+          <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} 
+          <span className="badge bg-success ms-2">{currentUser.role}</span>
+        </p>
+      </div>
+
+      <h2 className="mb-4">Assignment Editor</h2>
       
       {/* Assignment Name */}
       <div className="mb-3">
@@ -56,6 +130,7 @@ export default function AssignmentEditor() {
 
       {/* Description */}
       <div className="mb-4">
+        <label className="form-label fw-bold">Description</label>
         <textarea 
           className="form-control"
           rows={12}
@@ -266,8 +341,18 @@ export default function AssignmentEditor() {
 
       {/* Save/Cancel Buttons */}
       <div className="d-flex justify-content-end gap-2 mt-4">
-        <button className="btn btn-outline-secondary">Cancel</button>
-        <button className="btn btn-danger">Save</button>
+        <button 
+          className="btn btn-outline-secondary"
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button 
+          className="btn btn-danger"
+          onClick={handleSave}
+        >
+          Save
+        </button>
       </div>
     </div>
   );
