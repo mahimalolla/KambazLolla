@@ -1,14 +1,4 @@
 import courses from "./courses.json";
-import modules from "./modules.json";
-import assignments from "./assignments.json";
-import users from "./users.json";
-import enrollments from "./enrollments.json";
-
-export { courses, modules, assignments, users, enrollments };
-
-// Alternative: If you don't want to create JSON files, you can define them directly in index.ts
-// src/Kambaz/Database/index.ts
-import courses from "./courses.json";
 import modules from "./modules.json"; 
 import assignments from "./assignments.json";
 
