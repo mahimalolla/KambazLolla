@@ -1,0 +1,82 @@
+[
+  {
+    "_id": "A101",
+    "title": "HTML & CSS Fundamentals",
+    "course": "RS101",
+    "availableFrom": "2024-01-15",
+    "availableUntil": "2024-02-15",
+    "dueDate": "2024-01-25",
+    "points": 100,
+    "description": "Create a responsive website using HTML5 and CSS3. Must include semantic HTML, CSS Grid/Flexbox, and mobile-first design."
+  },
+  {
+    "_id": "A102",
+    "title": "JavaScript Interactive Features",
+    "course": "RS101",
+    "availableFrom": "2024-01-26",
+    "availableUntil": "2024-02-26",
+    "dueDate": "2024-02-05",
+    "points": 150,
+    "description": "Add interactive features to your website using vanilla JavaScript. Include DOM manipulation, event handling, and form validation."
+  },
+  {
+    "_id": "A103",
+    "title": "React Component Development",
+    "course": "RS101",
+    "availableFrom": "2024-02-06",
+    "availableUntil": "2024-03-06",
+    "dueDate": "2024-02-20",
+    "points": 200,
+    "description": "Build a React application with multiple components. Implement props, state, and event handling."
+  },
+  {
+    "_id": "A104",
+    "title": "State Management with Redux",
+    "course": "RS101",
+    "availableFrom": "2024-02-21",
+    "availableUntil": "2024-03-21",
+    "dueDate": "2024-03-07",
+    "points": 250,
+    "description": "Implement Redux for state management in your React application. Include CRUD operations and proper state flow."
+  },
+  {
+    "_id": "A201",
+    "title": "Software Requirements Analysis",
+    "course": "RS102",
+    "availableFrom": "2024-09-01",
+    "availableUntil": "2024-10-01",
+    "dueDate": "2024-09-15",
+    "points": 100,
+    "description": "Analyze software requirements for a given project. Create user stories, use cases, and requirement specifications."
+  },
+  {
+    "_id": "A202",
+    "title": "System Design Document",
+    "course": "RS102",
+    "availableFrom": "2024-09-16",
+    "availableUntil": "2024-10-16",
+    "dueDate": "2024-10-01",
+    "points": 150,
+    "description": "Design a software system architecture. Include UML diagrams, database schema, and API specifications."
+  },
+  {
+    "_id": "A301",
+    "title": "Database Schema Design",
+    "course": "RS103",
+    "availableFrom": "2024-01-15",
+    "availableUntil": "2024-02-15",
+    "dueDate": "2024-01-30",
+    "points": 120,
+    "description": "Design a normalized database schema for an e-commerce application. Include ERD and table definitions."
+  },
+  {
+    "_id": "A302",
+    "title": "Advanced SQL Queries",
+    "course": "RS103",
+    "availableFrom": "2024-01-31",
+    "availableUntil": "2024-02-28",
+    "dueDate": "2024-02-14",
+    "points": 130,
+    "description": "Write complex SQL queries including joins, subqueries, window functions, and stored procedures."
+  }
+]
