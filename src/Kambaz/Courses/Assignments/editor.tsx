@@ -1,10 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import * as db from "../../Database";
 
 export default function AssignmentEditor() {
-  const { cid } = useParams();
+  const { cid, aid } = useParams(); // Get both course ID and assignment ID
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // Determine if we're editing an existing assignment
+  const isEditing = !!aid;
+  
   const [assignment, setAssignment] = useState({
     name: "A1",
     description: "The assignment is available online\n\nSubmit a link to the landing page of your Web application running on Netlify.\n\nThe landing page should include the following:\n\n• Your full name and section\n• Links to each of the lab assignments\n• Link to the Kambaz application\n• Links to all relevant source code repositories\n\nThe Kambaz application should include a link to navigate back to the landing page.",
@@ -45,6 +50,41 @@ export default function AssignmentEditor() {
     }
   }, [navigate, cid]);
 
+  // Load existing assignment data if editing
+  useEffect(() => {
+    if (isEditing && aid && currentUser?.role === "FACULTY") {
+      console.log('Loading assignment with ID:', aid); // Debug log
+      const existingAssignment = db.assignments.find(a => a._id === aid);
+      
+      if (existingAssignment) {
+        console.log('Found existing assignment:', existingAssignment); // Debug log
+        setAssignment({
+          name: existingAssignment.title || "Untitled Assignment",
+          description: existingAssignment.description || "",
+          points: existingAssignment.points || 100,
+          group: existingAssignment.group || "ASSIGNMENTS",
+          gradeAs: existingAssignment.gradeAs || "Percentage",
+          submissionType: existingAssignment.submissionType || "Online",
+          onlineOptions: existingAssignment.onlineOptions || {
+            textEntry: false,
+            websiteUrl: true,
+            mediaRecordings: false,
+            studentAnnotation: false,
+            fileUploads: false
+          },
+          assignTo: existingAssignment.assignTo || "Everyone",
+          due: existingAssignment.dueDate || "",
+          availableFrom: existingAssignment.availableFrom || "",
+          until: existingAssignment.until || ""
+        });
+      } else {
+        console.warn('Assignment not found with ID:', aid);
+        alert('Assignment not found!');
+        navigate(`/Kambaz/Courses/${cid}/Assignments`);
+      }
+    }
+  }, [aid, isEditing, currentUser, cid, navigate]);
+
   const handleInputChange = (field: string, value: string | number) => {
     setAssignment(prev => ({
       ...prev,
@@ -63,9 +103,58 @@ export default function AssignmentEditor() {
   };
 
   const handleSave = () => {
-    // Add save functionality here
-    alert("Assignment saved successfully!");
-    navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    try {
+      if (isEditing && aid) {
+        // Update existing assignment
+        const existingIndex = db.assignments.findIndex(a => a._id === aid);
+        if (existingIndex !== -1) {
+          db.assignments[existingIndex] = {
+            ...db.assignments[existingIndex],
+            title: assignment.name,
+            description: assignment.description,
+            points: assignment.points,
+            group: assignment.group,
+            gradeAs: assignment.gradeAs,
+            submissionType: assignment.submissionType,
+            onlineOptions: assignment.onlineOptions,
+            assignTo: assignment.assignTo,
+            dueDate: assignment.due,
+            availableFrom: assignment.availableFrom,
+            until: assignment.until
+          };
+          alert("Assignment updated successfully!");
+        } else {
+          alert("Error: Assignment not found!");
+          return;
+        }
+      } else {
+        // Create new assignment
+        const newAssignment = {
+          _id: `A${Date.now()}`, // Generate unique ID
+          title: assignment.name,
+          description: assignment.description,
+          points: assignment.points,
+          group: assignment.group,
+          gradeAs: assignment.gradeAs,
+          submissionType: assignment.submissionType,
+          onlineOptions: assignment.onlineOptions,
+          assignTo: assignment.assignTo,
+          dueDate: assignment.due,
+          availableFrom: assignment.availableFrom,
+          until: assignment.until,
+          course: cid // Associate with current course
+        };
+        
+        db.assignments.push(newAssignment);
+        alert("Assignment created successfully!");
+      }
+      
+      // Navigate back to assignments list
+      navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+      alert("Error saving assignment. Please try again.");
+    }
   };
 
   const handleCancel = () => {
@@ -103,6 +192,10 @@ export default function AssignmentEditor() {
     );
   }
 
+  // Page title based on mode
+  const pageTitle = isEditing ? "Edit Assignment" : "New Assignment";
+  const saveButtonText = isEditing ? "Update Assignment" : "Save Assignment";
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
       
@@ -112,10 +205,11 @@ export default function AssignmentEditor() {
         <p className="mb-0">
           <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} 
           <span className="badge bg-success ms-2">{currentUser.role}</span>
+          {isEditing && <span className="ms-2 text-muted">• Editing Assignment ID: {aid}</span>}
         </p>
       </div>
 
-      <h2 className="mb-4">Assignment Editor</h2>
+      <h2 className="mb-4">{pageTitle}</h2>
       
       {/* Assignment Name */}
       <div className="mb-3">
@@ -125,6 +219,7 @@ export default function AssignmentEditor() {
           className="form-control"
           value={assignment.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
+          placeholder="Enter assignment name"
         />
       </div>
 
@@ -136,6 +231,7 @@ export default function AssignmentEditor() {
           rows={12}
           value={assignment.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder="Enter assignment description"
           style={{ 
             border: '1px solid #dee2e6',
             fontSize: '14px',
@@ -154,8 +250,9 @@ export default function AssignmentEditor() {
             type="number"
             className="form-control"
             value={assignment.points}
-            onChange={(e) => handleInputChange('points', parseInt(e.target.value))}
+            onChange={(e) => handleInputChange('points', parseInt(e.target.value) || 0)}
             style={{ width: '100px' }}
+            min="0"
           />
         </div>
       </div>
@@ -302,7 +399,7 @@ export default function AssignmentEditor() {
               <label className="form-label fw-bold">Assign to</label>
               <div className="d-flex align-items-center">
                 <span className="badge bg-light text-dark me-2">Everyone</span>
-                <button className="btn btn-sm btn-outline-secondary">×</button>
+                <button type="button" className="btn btn-sm btn-outline-secondary">×</button>
               </div>
             </div>
             
@@ -351,8 +448,16 @@ export default function AssignmentEditor() {
           className="btn btn-danger"
           onClick={handleSave}
         >
-          Save
+          {saveButtonText}
         </button>
+      </div>
+
+      {/* Debug Info (remove in production) */}
+      <div className="mt-4 p-3 bg-light rounded small">
+        <strong>Debug Info:</strong>
+        <br />Course ID: {cid}
+        <br />Assignment ID: {aid || 'New Assignment'}
+        <br />Mode: {isEditing ? 'Editing' : 'Creating'}
       </div>
     </div>
   );
