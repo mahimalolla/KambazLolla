@@ -49,8 +49,9 @@ export default function Assignments() {
             <button className="btn btn-secondary me-2">
               📁 + Group
             </button>
+            {/* FIX: Change from "new" to "editor" */}
             <Link 
-              to="new" 
+              to="editor" 
               className="btn btn-danger"
               id="wd-add-assignment-btn"
             >
@@ -106,6 +107,7 @@ export default function Assignments() {
                   <div className="d-flex align-items-start">
                     <div className="me-3">📝</div>
                     <div>
+                      {/* For faculty: Link to assignment details (not editor) */}
                       {isFaculty ? (
                         <Link 
                           to={`${assignment._id}`}
@@ -145,8 +147,9 @@ export default function Assignments() {
                 {isFaculty && (
                   <td>
                     <div className="d-flex gap-1">
+                      {/* FIX: Edit button should go to editor */}
                       <Link
-                        to={`${assignment._id}`}
+                        to={`${assignment._id}/editor`}
                         className="btn btn-outline-primary btn-sm"
                         title="Edit Assignment"
                       >
