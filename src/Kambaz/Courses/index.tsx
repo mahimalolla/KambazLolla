@@ -4,6 +4,7 @@ import CourseNavigation from "./Navigation";
 import Home from "./Home";
 import Modules from "./Modules";
 import Assignments from "./Assignments";
+import AssignmentEditor from "./Assignments/editor"; 
 import Grades from "./Grades";
 import People from "./People";
 import PiazzaDiscussions from "./Piazza";
@@ -12,7 +13,6 @@ import Quizzes from "./Quizzes";
 
 export default function Courses({ courses }: { courses: any[] }) {
   const { cid } = useParams();
-  // Find course from the shared courses state instead of database
   const course = courses.find((course: { _id: string | undefined; }) => course._id === cid);
   const { pathname } = useLocation();
   
@@ -22,7 +22,7 @@ export default function Courses({ courses }: { courses: any[] }) {
       <div style={{ 
         position: 'fixed',
         top: '0',
-        left: '240px', // Account for main Kambaz nav width (240px)
+        left: '240px', 
         right: '0',
         backgroundColor: '#ffffff',
         borderBottom: '1px solid #dee2e6',
@@ -38,8 +38,8 @@ export default function Courses({ courses }: { courses: any[] }) {
       
       {/* Main Content Area */}
       <div style={{ 
-        marginTop: '80px', // Space for fixed header
-        marginLeft: '240px', // Space for main nav (240px)
+        marginTop: '80px', 
+        marginLeft: '240px', 
         display: 'flex',
         minHeight: 'calc(100vh - 80px)'
       }}>
@@ -68,6 +68,11 @@ export default function Courses({ courses }: { courses: any[] }) {
             <Route path="Piazza" element={<PiazzaDiscussions />} />
             <Route path="Zoom" element={<Zoom />} />
             <Route path="Assignments" element={<Assignments />} />
+            
+            {/* ADD THESE TWO EDITOR ROUTES */}
+            <Route path="Assignments/editor" element={<AssignmentEditor />} />
+            <Route path="Assignments/:aid/editor" element={<AssignmentEditor />} />
+            
             <Route path="Quizzes" element={<Quizzes />} />
             <Route path="Grades" element={<Grades />} />
             <Route path="People" element={<People />} />
