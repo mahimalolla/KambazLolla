@@ -5,6 +5,7 @@ import * as db from "../../Database";
 export default function Assignments() {
   const { cid } = useParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]); // Add state for assignments
   
   useEffect(() => {
     const stored = localStorage.getItem('kambaz_user');
@@ -14,14 +15,56 @@ export default function Assignments() {
     }
   }, []);
 
+  // Load assignments when component mounts or when course changes
+  useEffect(() => {
+    loadAssignments();
+  }, [cid]);
+
+  const loadAssignments = () => {
+    // Filter assignments for this course
+    const courseAssignments = db.assignments.filter(
+      (assignment: any) => assignment.course === cid
+    );
+    setAssignments(courseAssignments);
+  };
+
+  // Delete assignment function
+  const deleteAssignment = (assignmentId: string, assignmentTitle: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the assignment "${assignmentTitle}"?\n\nThis action cannot be undone.`
+    );
+    
+    if (confirmed) {
+      try {
+        // Find the index of the assignment to delete
+        const assignmentIndex = db.assignments.findIndex(
+          (assignment: any) => assignment._id === assignmentId
+        );
+        
+        if (assignmentIndex !== -1) {
+          // Remove the assignment from the database
+          db.assignments.splice(assignmentIndex, 1);
+          
+          // Update local state to reflect the change
+          setAssignments(prevAssignments => 
+            prevAssignments.filter(assignment => assignment._id !== assignmentId)
+          );
+          
+          // Show success message
+          alert(`Assignment "${assignmentTitle}" has been deleted successfully!`);
+        } else {
+          alert('Error: Assignment not found!');
+        }
+      } catch (error) {
+        console.error('Error deleting assignment:', error);
+        alert('Error deleting assignment. Please try again.');
+      }
+    }
+  };
+
   // Role checks
   const isFaculty = currentUser?.role === "FACULTY";
   const isStudent = currentUser?.role === "STUDENT";
-
-  // Filter assignments for this course
-  const courseAssignments = db.assignments.filter(
-    (assignment: any) => assignment.course === cid
-  );
 
   // Show loading if no user
   if (!currentUser) {
@@ -49,7 +92,6 @@ export default function Assignments() {
             <button className="btn btn-secondary me-2">
               📁 + Group
             </button>
-            {/* FIX: Change from "new" to "editor" */}
             <Link 
               to="editor" 
               className="btn btn-danger"
@@ -101,7 +143,7 @@ export default function Assignments() {
             </tr>
           </thead>
           <tbody>
-            {courseAssignments.map((assignment: any) => (
+            {assignments.map((assignment: any) => (
               <tr key={assignment._id}>
                 <td>
                   <div className="d-flex align-items-start">
@@ -147,7 +189,7 @@ export default function Assignments() {
                 {isFaculty && (
                   <td>
                     <div className="d-flex gap-1">
-                      {/* FIX: Edit button should go to editor */}
+                      {/* Edit button */}
                       <Link
                         to={`${assignment._id}/editor`}
                         className="btn btn-outline-primary btn-sm"
@@ -155,15 +197,11 @@ export default function Assignments() {
                       >
                         ✏️
                       </Link>
+                      {/* UPDATED: Delete button with actual functionality */}
                       <button
                         className="btn btn-outline-danger btn-sm"
                         title="Delete Assignment"
-                        onClick={() => {
-                          if (window.confirm(`Delete assignment "${assignment.title}"?`)) {
-                            // Add delete functionality here
-                            alert('Delete functionality would be implemented here');
-                          }
-                        }}
+                        onClick={() => deleteAssignment(assignment._id, assignment.title)}
                       >
                         🗑️
                       </button>
@@ -183,7 +221,7 @@ export default function Assignments() {
       </div>
 
       {/* No Assignments Message */}
-      {courseAssignments.length === 0 && (
+      {assignments.length === 0 && (
         <div className="alert alert-info">
           <h5>No Assignments Found</h5>
           <p className="mb-0">
