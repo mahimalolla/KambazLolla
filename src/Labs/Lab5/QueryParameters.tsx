@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 const REMOTE_SERVER = import.meta.env.VITE_REMOTE_SERVER;
 
 export default function QueryParameters() {
@@ -24,6 +23,7 @@ export default function QueryParameters() {
         onChange={(e) => setB(e.target.value)}
       />
       
+      <a
         id="wd-query-parameter-add"
         className="btn btn-primary me-2"
         href={`${REMOTE_SERVER}/lab5/calculator?operation=add&a=${a}&b=${b}`}
@@ -31,6 +31,7 @@ export default function QueryParameters() {
         Add {a} + {b}
       </a>
       
+      <a
         id="wd-query-parameter-subtract"
         className="btn btn-danger me-2"
         href={`${REMOTE_SERVER}/lab5/calculator?operation=subtract&a=${a}&b=${b}`}
@@ -38,6 +39,7 @@ export default function QueryParameters() {
         Subtract {a} - {b}
       </a>
       
+      <a
         id="wd-query-parameter-multiply"
         className="btn btn-success me-2"
         href={`${REMOTE_SERVER}/lab5/calculator?operation=multiply&a=${a}&b=${b}`}
@@ -45,6 +47,7 @@ export default function QueryParameters() {
         Multiply {a} * {b}
       </a>
       
+      <a
         id="wd-query-parameter-divide"
         className="btn btn-warning"
         href={`${REMOTE_SERVER}/lab5/calculator?operation=divide&a=${a}&b=${b}`}
