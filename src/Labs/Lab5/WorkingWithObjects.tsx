@@ -46,6 +46,7 @@ export default function WorkingWithObjects() {
       
       <h4>Modifying Properties</h4>
       
+      <a
         id="wd-update-assignment-title"
         className="btn btn-primary float-end"
         href={`${ASSIGNMENT_API_URL}/title/${assignment.title}`}
@@ -62,6 +63,7 @@ export default function WorkingWithObjects() {
       />
       <br />
       
+      <a
         id="wd-update-assignment-score"
         className="btn btn-primary float-end"
         href={`${ASSIGNMENT_API_URL}/score/${assignment.score}`}
@@ -92,6 +94,7 @@ export default function WorkingWithObjects() {
           Assignment Completed
         </label>
         
+        <a
           id="wd-update-assignment-completed"
           className="btn btn-primary ms-3"
           href={`${ASSIGNMENT_API_URL}/completed/${assignment.completed}`}
@@ -103,6 +106,7 @@ export default function WorkingWithObjects() {
       
       <h5>Module</h5>
       
+      <a
         id="wd-update-module-name"
         className="btn btn-primary float-end"
         href={`${MODULE_API_URL}/name/${module.name}`}
@@ -119,6 +123,7 @@ export default function WorkingWithObjects() {
       />
       <br />
       
+      <a
         id="wd-update-module-description"
         className="btn btn-primary float-end"
         href={`${MODULE_API_URL}/description/${module.description}`}
