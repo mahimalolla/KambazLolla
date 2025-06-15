@@ -1,51 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import * as db from "../Database";
+import { useAuth } from "../AuthContext";
 
 export default function Signin() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   
   const navigate = useNavigate();
+  const { state, login, clearError } = useAuth();
 
-  const signin = async (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      navigate("/Kambaz/Dashboard");
+    }
+  }, [state.isAuthenticated, navigate]);
+
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => clearError();
+  }, [clearError]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
+    clearError();
 
     if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password");
-      setIsLoading(false);
       return;
     }
 
-    try {
-      // Find user in database
-      const user = db.users.find(
-        (u: any) => u.username === username && u.password === password
-      );
-
-      if (!user) {
-        setError("Invalid username or password");
-        setIsLoading(false);
-        return;
+    const success = await login(username, password);
+    if (success) {
+      // Handle remember me functionality
+      if (rememberMe) {
+        localStorage.setItem('kambaz_remember_user', username);
+      } else {
+        localStorage.removeItem('kambaz_remember_user');
       }
-
-      // Store user in localStorage (simple approach)
-      localStorage.setItem('kambaz_user', JSON.stringify(user));
-      
-      // Navigate to dashboard
       navigate("/Kambaz/Dashboard");
-      
-    } catch (err) {
-      setError("An error occurred during sign in");
-      setIsLoading(false);
     }
   };
+
+  // Load remembered username
+  useEffect(() => {
+    const rememberedUser = localStorage.getItem('kambaz_remember_user');
+    if (rememberedUser) {
+      setUsername(rememberedUser);
+      setRememberMe(true);
+    }
+  }, []);
 
   return (
     <div style={{
@@ -106,7 +112,7 @@ export default function Signin() {
         </div>
 
         {/* Error Message */}
-        {error && (
+        {state.error && (
           <div style={{
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
@@ -117,7 +123,7 @@ export default function Signin() {
             fontSize: '0.9rem',
             textAlign: 'center'
           }}>
-            {error}
+            {state.error}
           </div>
         )}
 
@@ -134,6 +140,9 @@ export default function Signin() {
             Test Accounts:
           </p>
           <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
+            <strong>Iron Man:</strong> iron_man / stark123
+          </p>
+          <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
             <strong>Faculty:</strong> alice_johnson / password123
           </p>
           <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
@@ -142,7 +151,7 @@ export default function Signin() {
         </div>
 
         {/* Form */}
-        <form onSubmit={signin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Username Field */}
           <div>
             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
@@ -156,7 +165,7 @@ export default function Signin() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 required
-                disabled={isLoading}
+                disabled={state.isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -165,7 +174,7 @@ export default function Signin() {
                   fontSize: '1rem',
                   outline: 'none',
                   boxSizing: 'border-box',
-                  backgroundColor: isLoading ? '#f9fafb' : 'white'
+                  backgroundColor: state.isLoading ? '#f9fafb' : 'white'
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#4f46e5';
@@ -192,7 +201,7 @@ export default function Signin() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                disabled={isLoading}
+                disabled={state.isLoading}
                 style={{
                   width: '100%',
                   padding: '12px 45px 12px 40px',
@@ -201,7 +210,7 @@ export default function Signin() {
                   fontSize: '1rem',
                   outline: 'none',
                   boxSizing: 'border-box',
-                  backgroundColor: isLoading ? '#f9fafb' : 'white'
+                  backgroundColor: state.isLoading ? '#f9fafb' : 'white'
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#4f46e5';
@@ -215,7 +224,7 @@ export default function Signin() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
+                disabled={state.isLoading}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -224,7 +233,7 @@ export default function Signin() {
                   background: 'none',
                   border: 'none',
                   color: '#9ca3af',
-                  cursor: isLoading ? 'not-allowed' : 'pointer'
+                  cursor: state.isLoading ? 'not-allowed' : 'pointer'
                 }}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -246,7 +255,12 @@ export default function Signin() {
               cursor: 'pointer',
               color: '#374151'
             }}>
-              <input type="checkbox" style={{ margin: 0 }} />
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ margin: 0 }} 
+              />
               Remember me
             </label>
             <Link
@@ -264,10 +278,10 @@ export default function Signin() {
           {/* Sign In Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={state.isLoading || !username.trim() || !password.trim()}
             style={{
               width: '100%',
-              background: isLoading 
+              background: (state.isLoading || !username.trim() || !password.trim())
                 ? 'linear-gradient(135deg, #9ca3af, #6b7280)' 
                 : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
               color: 'white',
@@ -276,7 +290,7 @@ export default function Signin() {
               padding: '14px',
               fontSize: '1rem',
               fontWeight: '600',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
+              cursor: (state.isLoading || !username.trim() || !password.trim()) ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
@@ -284,7 +298,7 @@ export default function Signin() {
               gap: '8px'
             }}
           >
-            {isLoading ? (
+            {state.isLoading ? (
               <>
                 <div style={{
                   width: '16px',
