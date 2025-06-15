@@ -20,14 +20,14 @@ export default function Signup() {
   const navigate = useNavigate();
   const { state, register, clearError } = useAuth();
 
-  // Redirect if already authenticated
+
   useEffect(() => {
     if (state.isAuthenticated) {
       navigate("/Kambaz/Dashboard");
     }
   }, [state.isAuthenticated, navigate]);
 
-  // Clear error when component unmounts
+
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
@@ -77,7 +77,10 @@ export default function Signup() {
     });
 
     if (success) {
-      navigate("/Kambaz/Dashboard");
+      setTimeout(() => {
+        navigate("/Kambaz/Dashboard");
+        window.location.reload();
+      }, 200);
     }
   };
 
@@ -556,7 +559,7 @@ export default function Signup() {
           </button>
         </form>
 
-        {/* Sign In Link */}
+        {/* Sign In Link - FIXED */}
         <div style={{
           textAlign: 'center',
           marginTop: '24px',
@@ -571,6 +574,11 @@ export default function Signup() {
                 color: '#10b981',
                 textDecoration: 'none',
                 fontWeight: '600'
+              }}
+              onClick={() => {
+                // Clear any existing form errors when navigating
+                clearError();
+                setPasswordMatchError("");
               }}
             >
               Sign in here
