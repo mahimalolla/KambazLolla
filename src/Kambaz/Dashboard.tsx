@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../AuthContext"; 
+import { useAuth } from "../AuthContext";
 import * as db from "../Database";
 
 export default function Dashboard() {
-  const { state: authState, logout } = useAuth(); // Get auth state
+  const { state: authState, logout } = useAuth(); 
   const [courses, setCourses] = useState<any[]>([]);
   const [course, setCourse] = useState<any>({
     name: "",
