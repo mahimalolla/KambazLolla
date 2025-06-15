@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaEnvelope } from "react-icons/fa";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../../AuthContext";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
