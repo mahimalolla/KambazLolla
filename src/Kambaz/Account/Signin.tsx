@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../../AuthContext";
+
 export default function Signin() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
@@ -39,11 +40,15 @@ export default function Signin() {
       } else {
         localStorage.removeItem('kambaz_remember_user');
       }
-      navigate("/Kambaz/Dashboard");
+      
+
+      setTimeout(() => {
+        navigate("/Kambaz/Dashboard");
+        window.location.reload();
+      }, 200);
     }
   };
 
-  // Load remembered username
   useEffect(() => {
     const rememberedUser = localStorage.getItem('kambaz_remember_user');
     if (rememberedUser) {
