@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUser, FaEnvelope, FaSave, FaSignOutAlt, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
-import { useAuth } from "../../AuthContext";
+import { useAuth } from "../AuthContext";
 
 export default function Profile() {
   const { state, updateProfile, logout } = useAuth();
