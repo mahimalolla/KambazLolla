@@ -2,7 +2,7 @@ import courses from "./courses.json";
 import modules from "./modules.json"; 
 import assignments from "./assignments.json";
 
-// Adding the iron_man account and update existing users
+// Add the iron_man account and update existing users
 export let users = [
   {
     _id: "121",
@@ -101,7 +101,7 @@ export let assignmentsData = [...assignments];
 // Export the original data as well for reference
 export { courses, modules, assignments };
 
-// User CRUD Operations
+// User CRUD Operations - REQUIRED FOR AUTHENTICATION
 export const findUserByCredentials = (username: string, password: string) => {
   return users.find(user => user.username === username && user.password === password);
 };
