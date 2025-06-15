@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import * as db from './Database'; 
+import * as db from './Database/index'; 
 
 // Types
 interface User {
