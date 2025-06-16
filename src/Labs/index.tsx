@@ -20,7 +20,7 @@ export default function Labs() {
           <li><Link to="/Labs/Lab5">Lab 5</Link></li>
           <li><Link to="/Kambaz">Kambaz</Link></li>
           <li>
-            <a
+            
               id="wd-github"
               href="https://github.com/mahimalolla/kambaz-react-web-app-lolla"
               target="_blank"
@@ -34,7 +34,7 @@ export default function Labs() {
           <Route path="/" element={<Navigate to="Lab1" />} />
           <Route path="Lab1" element={<Lab1 />} />
           <Route path="Lab2" element={<Lab2 />} />
-          <Route path="Lab3" element={<Lab3 />} />
+          <Route path="Lab3/*" element={<Lab3 />} />  {/* Added /* here */}
           <Route path="Lab4" element={<Lab4 />} />
           <Route path="Lab5" element={<Lab5 />} /> 
         </Routes>
