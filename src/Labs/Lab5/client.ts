@@ -4,6 +4,9 @@ const REMOTE_SERVER = import.meta.env.VITE_REMOTE_SERVER;
 const TODOS_API = `${REMOTE_SERVER}/lab5/todos`;
 const ASSIGNMENT_API = `${REMOTE_SERVER}/lab5/assignment`;
 
+// Create axios instance with credentials for CORS support
+const axiosWithCredentials = axios.create({ withCredentials: true });
+
 export const fetchWelcomeMessage = async () => {
   const response = await axios.get(`${REMOTE_SERVER}/lab5/welcome`);
   return response.data;
