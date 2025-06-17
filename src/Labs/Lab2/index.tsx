@@ -9,6 +9,7 @@ import BootstrapTables from './BootstrapTables';
 import BootstrapLists from './BootstrapLists';
 import BootstrapForms from './BootstrapForms';
 import BootstrapNavigation from './BootstrapNavigation';
+import ScreenSizeLabel from './ScreenSizeLabel';
 import Margins from "./Margins";
 import Position from "./Positions";
 import AbsolutePosition from "./AbsolutePosition";
@@ -18,6 +19,9 @@ import Zindex from "./Zindex";
 export default function Lab2() {
   return (
     <div id="wd-lab2">
+      {/* Add the responsive screen size indicator */}
+      <ScreenSizeLabel />
+      
       <h2>Lab 2 - Cascading Style Sheets</h2>
 
       {/* 2.1.2 – Style attribute */}
@@ -157,6 +161,9 @@ export default function Lab2() {
 
       {/* 2.1.19 – Flexbox Layout */}
       <Flex />
+
+      {/* 2.3 – Bootstrap Navigation - Move this up before other Bootstrap components */}
+      <BootstrapNavigation />
 
       {/* 2.3 – Bootstrap Grid */}
       <div className="container mt-5">
@@ -343,13 +350,10 @@ export default function Lab2() {
           <div className="col-12 bg-primary text-white text-center p-2">6</div>
         </div>
 
+        {/* Remove the duplicate screen size indicator since we have ScreenSizeLabel now */}
         <h3 className="mt-5">Responsive Breakpoints</h3>
-        <div className="position-absolute top-0 start-0 bg-dark text-white px-2 py-1" style={{zIndex: 999}}>
-          <span className="d-block d-sm-none">XS</span>
-          <span className="d-none d-sm-block d-md-none">SM</span>
-          <span className="d-none d-md-block d-lg-none">MD</span>
-          <span className="d-none d-lg-block d-xl-none">LG</span>
-          <span className="d-none d-xl-block">XL+</span>
+        <div className="alert alert-info">
+          <strong>📱 Check the top-left corner</strong> for a live screen size indicator that updates as you resize the window!
         </div>
       </div>
 
@@ -361,9 +365,6 @@ export default function Lab2() {
 
       {/* 2.3.3 – Bootstrap Forms */}
       <BootstrapForms />
-
-      {/* 2.3.4 – Bootstrap Navigation */}
-      <BootstrapNavigation />
 
       {/* 2.3.5 – Bootstrap Cards */}
       <div className="container mt-5">
