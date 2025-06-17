@@ -7,7 +7,8 @@ import {
   FaClipboardList, 
   FaFlask,
   FaUser,
-  FaSignInAlt
+  FaSignInAlt,
+  FaUserGraduate  // New icon for Enrollments
 } from "react-icons/fa";
 import { LiaBookSolid } from "react-icons/lia";
 
@@ -18,6 +19,7 @@ export default function KambazNavigation() {
   const links = [
     { label: "Dashboard", path: "/Kambaz/Dashboard", icon: FaBook },
     { label: "Courses", path: "/Kambaz/Dashboard", icon: LiaBookSolid }, 
+    { label: "Enrollments", path: "/Kambaz/Enrollments", icon: FaUserGraduate }, // New Enrollments link
     { label: "Calendar", path: "/Kambaz/Calendar", icon: FaCalendarAlt },
     { label: "Inbox", path: "/Kambaz/Inbox", icon: FaClipboardList },
     { label: "Labs", path: "/Labs", icon: FaFlask },
@@ -126,12 +128,14 @@ export default function KambazNavigation() {
       {links.map((link) => {
         const IconComponent = link.icon;
         
-        // Fixed active state logic
+        // Updated active state logic to include Enrollments
         let active = false;
         if (link.label === "Dashboard") {
           active = pathname === "/Kambaz/Dashboard";
         } else if (link.label === "Courses") {
           active = pathname.includes("/Kambaz/Courses");
+        } else if (link.label === "Enrollments") {
+          active = pathname.includes("/Kambaz/Enrollments");
         } else if (link.label === "Calendar") {
           active = pathname.includes("/Kambaz/Calendar");
         } else if (link.label === "Inbox") {
