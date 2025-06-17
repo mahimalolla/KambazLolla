@@ -365,25 +365,6 @@ export default function Lab2() {
           <div className="col-12 bg-primary text-white text-center p-2">6</div>
         </div>
 
-        {/* Testing Instructions */}
-        <div className="alert alert-success mt-4">
-          <h5>🧪 Test Your Responsive Grid:</h5>
-          <ol>
-            <li><strong>Desktop (≥992px):</strong> Should show multiple columns side by side</li>
-            <li><strong>Tablet (768px-991px):</strong> Should show fewer columns, some wrapping</li>
-            <li><strong>Mobile (≤767px):</strong> Should stack most content vertically</li>
-            <li><strong>Watch the screen size indicator</strong> in the top-left corner!</li>
-          </ol>
-          <p><strong>🔍 Key:</strong> The responsive examples above should change their layout as you resize, while the static examples at the top should always stay the same.</p>
-        </div>
-
-        {/* Responsive Breakpoints Info */}
-        <h3 className="mt-5">Responsive Breakpoints</h3>
-        <div className="alert alert-info">
-          <strong>📱 Check the top-left corner</strong> for a live screen size indicator that updates as you resize the window!
-        </div>
-      </div>
-
       {/* 2.3.1 – Bootstrap Tables */}
       <BootstrapTables />
 
