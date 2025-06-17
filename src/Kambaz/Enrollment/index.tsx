@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../../AuthContext";
 import * as enrollmentClient from "./client"; // Your updated client functions
 
 export default function EnhancedEnrollments() {
