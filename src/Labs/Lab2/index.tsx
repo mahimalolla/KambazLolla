@@ -364,6 +364,8 @@ export default function Lab2() {
           <div className="col-12 bg-warning text-center p-2 mb-1">5</div>
           <div className="col-12 bg-primary text-white text-center p-2">6</div>
         </div>
+      </div>
+      {/* CLOSING DIV FOR BOOTSTRAP GRID CONTAINER - THIS WAS MISSING! */}
 
       {/* 2.3.1 – Bootstrap Tables */}
       <BootstrapTables />
