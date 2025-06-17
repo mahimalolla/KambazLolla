@@ -6,8 +6,8 @@ import Courses from "./Courses";
 import Account from "./Account";
 import Calendar from "./Calendar";
 import Inbox from "./Inbox";
+import EnhancedEnrollments from "./EnhancedEnrollments"; 
 import * as db from "./Database";
-import Enrollment from "./Enrollment";
 
 export default function Kambaz() {
   const [courses, setCourses] = useState<any[]>(db.courses);
@@ -71,7 +71,8 @@ export default function Kambaz() {
           />
           <Route path="Calendar" element={<Calendar />} />
           <Route path="Inbox" element={<Inbox />} />
-          <Route path="/Kambaz/Enrollment" element={<Enrollment />} />
+          {/* Updated enrollments route */}
+          <Route path="Enrollments" element={<EnhancedEnrollments />} />
         </Routes>
       </div>
     </div>
