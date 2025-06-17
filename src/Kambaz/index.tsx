@@ -6,7 +6,7 @@ import Courses from "./Courses";
 import Account from "./Account";
 import Calendar from "./Calendar";
 import Inbox from "./Inbox";
-import EnhancedEnrollments from "./EnhancedEnrollments"; 
+import Enrollment from "./Enrollment"; 
 import * as db from "./Database";
 
 export default function Kambaz() {
@@ -72,7 +72,7 @@ export default function Kambaz() {
           <Route path="Calendar" element={<Calendar />} />
           <Route path="Inbox" element={<Inbox />} />
           {/* Updated enrollments route */}
-          <Route path="Enrollments" element={<EnhancedEnrollments />} />
+          <Route path="Enrollment" element={<Enrollment />} />
         </Routes>
       </div>
     </div>
