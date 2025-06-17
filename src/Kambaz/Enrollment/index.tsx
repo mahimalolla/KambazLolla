@@ -1,75 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
-import * as db from "./Database";
+import * as coursesClient from "../Courses/client";
+import * as userClient from "../Account/client";
 
 export default function EnhancedEnrollments() {
   const { state } = useAuth();
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
-  const [enrollments, setEnrollments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("available");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("all");
 
-  // Mock enrollment data structure
-  const fetchEnrollmentData = () => {
+  // Fetch data from remote database
+  const fetchEnrollmentData = async () => {
     try {
       setLoading(true);
       
-      // Get all courses from database
-      const courses = db.courses || [];
-      setAllCourses(courses);
+      // Fetch all available courses and user's enrolled courses from remote database
+      const [allCoursesData, enrolledCoursesData] = await Promise.all([
+        coursesClient.fetchAllCourses(),
+        state.user ? userClient.findMyCourses() : Promise.resolve([])
+      ]);
       
-      // Get user's enrolled courses
-      if (state.user) {
-        const userEnrolledCourses = db.getCoursesByUser(state.user._id) || [];
-        setEnrolledCourses(userEnrolledCourses);
-        
-        // Create enrollment records with additional metadata
-        const enrollmentRecords = userEnrolledCourses.map((course: any) => ({
-          id: `enroll_${course._id}_${state.user._id}`,
-          courseId: course._id,
-          courseName: course.name,
-          courseNumber: course.number,
-          userId: state.user._id,
-          userName: `${state.user.firstName} ${state.user.lastName}`,
-          userRole: state.user.role,
-          enrollmentDate: new Date().toISOString().split('T')[0],
-          status: "active",
-          grade: null,
-          completedAssignments: 0,
-          totalAssignments: 5,
-          lastAccessed: new Date().toISOString().split('T')[0]
-        }));
-        
-        setEnrollments(enrollmentRecords);
-      }
+      setAllCourses(allCoursesData || []);
+      setEnrolledCourses(enrolledCoursesData || []);
+      
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
-      setMessage("Error loading enrollment data");
+      setMessage("❌ Error loading course data. Please try again.");
+      setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEnroll = async (courseId: string, courseName: string) => {
-    if (!state.user) return;
+    if (!state.user) {
+      setMessage("❌ Please sign in to enroll in courses");
+      return;
+    }
     
     try {
       setLoading(true);
       
-      // Use existing database function
-      db.enrollUserInCourse(state.user._id, courseId);
+      // Call remote API to enroll user
+      await coursesClient.enrollInCourse(courseId);
       
       setMessage(`✅ Successfully enrolled in ${courseName}!`);
-      fetchEnrollmentData(); // Refresh data
+      
+      // Refresh data from remote database
+      await fetchEnrollmentData();
       
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      console.error("Error enrolling:", error);
-      setMessage("❌ Failed to enroll in course");
+      console.error("Error enrolling in course:", error);
+      setMessage(`❌ Failed to enroll in ${courseName}. Please try again.`);
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
@@ -79,22 +66,25 @@ export default function EnhancedEnrollments() {
   const handleUnenroll = async (courseId: string, courseName: string) => {
     if (!state.user) return;
     
-    if (!window.confirm(`Are you sure you want to drop ${courseName}?`)) {
+    if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
       return;
     }
     
     try {
       setLoading(true);
       
-      // Remove enrollment (you'll need to implement this in your database)
-      // For now, we'll simulate it
+      // Call remote API to unenroll user
+      await coursesClient.unenrollFromCourse(courseId);
+      
       setMessage(`✅ Successfully dropped ${courseName}!`);
-      fetchEnrollmentData(); // Refresh data
+      
+      // Refresh data from remote database
+      await fetchEnrollmentData();
       
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      console.error("Error unenrolling:", error);
-      setMessage("❌ Failed to drop course");
+      console.error("Error unenrolling from course:", error);
+      setMessage(`❌ Failed to drop ${courseName}. Please try again.`);
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
@@ -114,9 +104,9 @@ export default function EnhancedEnrollments() {
     
     if (searchTerm) {
       filtered = filtered.filter(course => 
-        course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        course.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -130,16 +120,26 @@ export default function EnhancedEnrollments() {
   };
 
   const getDepartments = () => {
-    const departments = new Set(allCourses.map(course => course.department).filter(Boolean));
+    const departments = new Set(
+      allCourses
+        .map(course => course.department)
+        .filter(dept => dept && dept.trim() !== "")
+    );
     return Array.from(departments);
   };
 
+  // Load data when component mounts or user changes
   useEffect(() => {
     if (state.user) {
       fetchEnrollmentData();
+    } else {
+      // Reset data for non-authenticated users
+      setAllCourses([]);
+      setEnrolledCourses([]);
     }
   }, [state.user]);
 
+  // Handle unauthenticated users
   if (!state.isAuthenticated) {
     return (
       <div style={{ 
@@ -157,10 +157,25 @@ export default function EnhancedEnrollments() {
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           textAlign: 'center'
         }}>
-          <h4 style={{ color: '#dc2626', marginBottom: '16px' }}>Authentication Required</h4>
+          <h4 style={{ color: '#dc2626', marginBottom: '16px' }}>
+            🔐 Authentication Required
+          </h4>
           <p style={{ color: '#6b7280', marginBottom: '20px' }}>
-            Please sign in to manage your course enrollments.
+            Please sign in to view and manage your course enrollments.
           </p>
+          <a 
+            href="/Kambaz/Account/Signin"
+            style={{
+              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontWeight: '600'
+            }}
+          >
+            Sign In Now
+          </a>
         </div>
       </div>
     );
@@ -198,7 +213,10 @@ export default function EnhancedEnrollments() {
             fontSize: '1.1rem',
             margin: 0
           }}>
-            Manage your course enrollments and track your academic progress.
+            Welcome {state.user?.firstName}! {enrolledCourses.length === 0 
+              ? "You're not enrolled in any courses yet. Browse available courses below to get started." 
+              : "Manage your course enrollments and track your academic progress."
+            }
           </p>
           
           {/* Stats */}
@@ -232,7 +250,7 @@ export default function EnhancedEnrollments() {
                 {availableCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#166534' }}>
-                Available Courses
+                Available to Enroll
               </div>
             </div>
             
@@ -243,10 +261,10 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#92400e' }}>
-                {enrollments.reduce((acc, enr) => acc + enr.completedAssignments, 0)}
+                {allCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#92400e' }}>
-                Completed Assignments
+                Total Courses
               </div>
             </div>
           </div>
@@ -284,7 +302,7 @@ export default function EnhancedEnrollments() {
           }}>
             <input
               type="text"
-              placeholder="🔍 Search courses..."
+              placeholder="🔍 Search courses by name, number, or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -297,23 +315,25 @@ export default function EnhancedEnrollments() {
               }}
             />
             
-            <select
-              value={filterDepartment}
-              onChange={(e) => setFilterDepartment(e.target.value)}
-              style={{
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                outline: 'none',
-                minWidth: '150px'
-              }}
-            >
-              <option value="all">All Departments</option>
-              {getDepartments().map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
+            {getDepartments().length > 0 && (
+              <select
+                value={filterDepartment}
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                style={{
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  minWidth: '150px'
+                }}
+              >
+                <option value="all">All Departments</option>
+                {getDepartments().map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            )}
 
             <button
               onClick={() => {
@@ -326,7 +346,8 @@ export default function EnhancedEnrollments() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontSize: '0.9rem'
               }}
             >
               Clear
@@ -334,283 +355,309 @@ export default function EnhancedEnrollments() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          marginBottom: '20px'
-        }}>
+        {/* Loading State */}
+        {loading && (
           <div style={{
-            display: 'flex',
-            borderBottom: '1px solid #e5e7eb'
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            padding: '40px',
+            textAlign: 'center',
+            marginBottom: '20px'
           }}>
-            <button
-              onClick={() => setActiveTab("available")}
-              style={{
-                flex: 1,
-                padding: '16px',
-                border: 'none',
-                backgroundColor: activeTab === "available" ? '#4f46e5' : 'transparent',
-                color: activeTab === "available" ? 'white' : '#6b7280',
-                borderRadius: activeTab === "available" ? '16px 16px 0 0' : '0',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              📋 Available Courses ({availableCourses.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("enrolled")}
-              style={{
-                flex: 1,
-                padding: '16px',
-                border: 'none',
-                backgroundColor: activeTab === "enrolled" ? '#4f46e5' : 'transparent',
-                color: activeTab === "enrolled" ? 'white' : '#6b7280',
-                borderRadius: activeTab === "enrolled" ? '16px 16px 0 0' : '0',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              ✅ My Enrollments ({myEnrolledCourses.length})
-            </button>
+            <div style={{ color: '#6b7280', fontSize: '1.1rem' }}>
+              🔄 Loading courses from database...
+            </div>
           </div>
+        )}
 
-          <div style={{ padding: '20px' }}>
-            {loading && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <p style={{ color: '#6b7280' }}>Loading courses...</p>
-              </div>
-            )}
+        {/* Tabs */}
+        {!loading && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            marginBottom: '20px'
+          }}>
+            <div style={{
+              display: 'flex',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <button
+                onClick={() => setActiveTab("available")}
+                style={{
+                  flex: 1,
+                  padding: '16px',
+                  border: 'none',
+                  backgroundColor: activeTab === "available" ? '#4f46e5' : 'transparent',
+                  color: activeTab === "available" ? 'white' : '#6b7280',
+                  borderRadius: activeTab === "available" ? '16px 16px 0 0' : '0',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                📋 Available Courses ({availableCourses.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("enrolled")}
+                style={{
+                  flex: 1,
+                  padding: '16px',
+                  border: 'none',
+                  backgroundColor: activeTab === "enrolled" ? '#4f46e5' : 'transparent',
+                  color: activeTab === "enrolled" ? 'white' : '#6b7280',
+                  borderRadius: activeTab === "enrolled" ? '16px 16px 0 0' : '0',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                ✅ My Enrollments ({myEnrolledCourses.length})
+              </button>
+            </div>
 
-            {/* Available Courses Tab */}
-            {activeTab === "available" && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: '20px'
-              }}>
-                {availableCourses.map((course: any) => (
-                  <div key={course._id} style={{
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <div style={{ marginBottom: '15px' }}>
-                      <h3 style={{
-                        margin: '0 0 8px 0',
-                        color: '#2d3748',
-                        fontSize: '1.25rem',
-                        fontWeight: '600'
-                      }}>
-                        {course.name}
-                      </h3>
-                      <p style={{
-                        margin: '0 0 8px 0',
-                        color: '#4a5568',
-                        fontSize: '0.9rem',
-                        fontWeight: '500'
-                      }}>
-                        {course.number} • {course.department}
-                      </p>
-                      <p style={{
-                        margin: '0',
-                        color: '#718096',
-                        fontSize: '0.9rem',
-                        lineHeight: '1.4'
-                      }}>
-                        {course.description || 'No description available'}
-                      </p>
-                    </div>
-
+            <div style={{ padding: '20px' }}>
+              {/* Available Courses Tab */}
+              {activeTab === "available" && (
+                <div>
+                  {availableCourses.length > 0 ? (
                     <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+                      gap: '20px'
                     }}>
-                      <button
-                        onClick={() => handleEnroll(course._id, course.name)}
-                        disabled={loading}
-                        style={{
-                          backgroundColor: '#4299e1',
-                          color: 'white',
-                          border: 'none',
-                          padding: '10px 20px',
-                          borderRadius: '8px',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          fontSize: '0.9rem',
-                          fontWeight: '500',
-                          opacity: loading ? 0.6 : 1
-                        }}
-                      >
-                        {loading ? 'Processing...' : '➕ Enroll Now'}
-                      </button>
-
-                      <span style={{
-                        fontSize: '0.8rem',
-                        color: '#718096'
-                      }}>
-                        Credits: {course.credits || 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-
-                {availableCourses.length === 0 && !loading && (
-                  <div style={{
-                    gridColumn: '1 / -1',
-                    textAlign: 'center',
-                    padding: '40px',
-                    color: '#718096'
-                  }}>
-                    <p>No available courses found matching your criteria.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Enrolled Courses Tab */}
-            {activeTab === "enrolled" && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: '20px'
-              }}>
-                {myEnrolledCourses.map((course: any) => {
-                  const enrollment = enrollments.find(e => e.courseId === course._id);
-                  
-                  return (
-                    <div key={course._id} style={{
-                      border: '2px solid #48bb78',
-                      borderRadius: '12px',
-                      padding: '20px',
-                      backgroundColor: '#f0fff4',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                      position: 'relative'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        backgroundColor: '#48bb78',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
-                      }}>
-                        ENROLLED
-                      </div>
-
-                      <div style={{ marginBottom: '15px' }}>
-                        <h3 style={{
-                          margin: '0 0 8px 0',
-                          color: '#2d3748',
-                          fontSize: '1.25rem',
-                          fontWeight: '600'
+                      {availableCourses.map((course: any) => (
+                        <div key={course._id} style={{
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '12px',
+                          padding: '20px',
+                          backgroundColor: 'white',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          transition: 'all 0.2s ease'
                         }}>
-                          {course.name}
-                        </h3>
-                        <p style={{
-                          margin: '0 0 8px 0',
-                          color: '#4a5568',
-                          fontSize: '0.9rem',
-                          fontWeight: '500'
-                        }}>
-                          {course.number} • {course.department}
-                        </p>
-                        <p style={{
-                          margin: '0 0 12px 0',
-                          color: '#718096',
-                          fontSize: '0.9rem',
-                          lineHeight: '1.4'
-                        }}>
-                          {course.description || 'No description available'}
-                        </p>
-
-                        {enrollment && (
-                          <div style={{
-                            backgroundColor: 'white',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            marginBottom: '12px'
-                          }}>
-                            <div style={{ fontSize: '0.8rem', color: '#4a5568' }}>
-                              <div>📅 Enrolled: {enrollment.enrollmentDate}</div>
-                              <div>📊 Progress: {enrollment.completedAssignments}/{enrollment.totalAssignments} assignments</div>
-                              <div>🕒 Last accessed: {enrollment.lastAccessed}</div>
-                            </div>
+                          <div style={{ marginBottom: '15px' }}>
+                            <h3 style={{
+                              margin: '0 0 8px 0',
+                              color: '#2d3748',
+                              fontSize: '1.25rem',
+                              fontWeight: '600'
+                            }}>
+                              {course.name}
+                            </h3>
+                            <p style={{
+                              margin: '0 0 8px 0',
+                              color: '#4a5568',
+                              fontSize: '0.9rem',
+                              fontWeight: '500'
+                            }}>
+                              {course.number} {course.department && `• ${course.department}`}
+                            </p>
+                            <p style={{
+                              margin: '0',
+                              color: '#718096',
+                              fontSize: '0.9rem',
+                              lineHeight: '1.4'
+                            }}>
+                              {course.description || 'No description available'}
+                            </p>
                           </div>
-                        )}
-                      </div>
 
-                      <div style={{
-                        display: 'flex',
-                        gap: '10px',
-                        alignItems: 'center'
-                      }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <button
+                              onClick={() => handleEnroll(course._id, course.name)}
+                              disabled={loading}
+                              style={{
+                                backgroundColor: '#4299e1',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: '500',
+                                opacity: loading ? 0.6 : 1
+                              }}
+                            >
+                              {loading ? 'Processing...' : '➕ Enroll Now'}
+                            </button>
+
+                            <span style={{
+                              fontSize: '0.8rem',
+                              color: '#718096'
+                            }}>
+                              Credits: {course.credits || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '40px',
+                      color: '#718096'
+                    }}>
+                      {allCourses.length === 0 ? (
+                        <div>
+                          <h3>📚 No Courses Available</h3>
+                          <p>There are currently no courses available for enrollment.</p>
+                          <button
+                            onClick={fetchEnrollmentData}
+                            style={{
+                              marginTop: '16px',
+                              backgroundColor: '#4299e1',
+                              color: 'white',
+                              border: 'none',
+                              padding: '10px 20px',
+                              borderRadius: '8px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔄 Refresh
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <h3>🎉 All Caught Up!</h3>
+                          <p>You're already enrolled in all available courses, or no courses match your search criteria.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Enrolled Courses Tab */}
+              {activeTab === "enrolled" && (
+                <div>
+                  {myEnrolledCourses.length > 0 ? (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+                      gap: '20px'
+                    }}>
+                      {myEnrolledCourses.map((course: any) => (
+                        <div key={course._id} style={{
+                          border: '2px solid #48bb78',
+                          borderRadius: '12px',
+                          padding: '20px',
+                          backgroundColor: '#f0fff4',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          position: 'relative'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            backgroundColor: '#48bb78',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600'
+                          }}>
+                            ENROLLED
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <h3 style={{
+                              margin: '0 0 8px 0',
+                              color: '#2d3748',
+                              fontSize: '1.25rem',
+                              fontWeight: '600'
+                            }}>
+                              {course.name}
+                            </h3>
+                            <p style={{
+                              margin: '0 0 8px 0',
+                              color: '#4a5568',
+                              fontSize: '0.9rem',
+                              fontWeight: '500'
+                            }}>
+                              {course.number} {course.department && `• ${course.department}`}
+                            </p>
+                            <p style={{
+                              margin: '0 0 12px 0',
+                              color: '#718096',
+                              fontSize: '0.9rem',
+                              lineHeight: '1.4'
+                            }}>
+                              {course.description || 'No description available'}
+                            </p>
+                          </div>
+
+                          <div style={{
+                            display: 'flex',
+                            gap: '10px',
+                            alignItems: 'center'
+                          }}>
+                            <button
+                              onClick={() => handleUnenroll(course._id, course.name)}
+                              disabled={loading}
+                              style={{
+                                backgroundColor: '#e53e3e',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: '500',
+                                opacity: loading ? 0.6 : 1
+                              }}
+                            >
+                              {loading ? 'Processing...' : '❌ Drop Course'}
+                            </button>
+
+                            <span style={{
+                              fontSize: '0.8rem',
+                              color: '#718096',
+                              marginLeft: 'auto'
+                            }}>
+                              Credits: {course.credits || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '40px',
+                      color: '#718096'
+                    }}>
+                      <div>
+                        <h3>🎓 Ready to Start Learning?</h3>
+                        <p>You're not currently enrolled in any courses. Browse available courses to begin your academic journey!</p>
                         <button
-                          onClick={() => handleUnenroll(course._id, course.name)}
-                          disabled={loading}
+                          onClick={() => setActiveTab("available")}
                           style={{
-                            backgroundColor: '#e53e3e',
+                            marginTop: '16px',
+                            backgroundColor: '#4299e1',
                             color: 'white',
                             border: 'none',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: '500',
-                            opacity: loading ? 0.6 : 1
+                            padding: '12px 24px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            fontWeight: '500'
                           }}
                         >
-                          {loading ? 'Processing...' : '❌ Drop Course'}
+                          📚 Browse Available Courses
                         </button>
-
-                        <span style={{
-                          fontSize: '0.8rem',
-                          color: '#718096',
-                          marginLeft: 'auto'
-                        }}>
-                          Credits: {course.credits || 'N/A'}
-                        </span>
                       </div>
                     </div>
-                  );
-                })}
-
-                {myEnrolledCourses.length === 0 && !loading && (
-                  <div style={{
-                    gridColumn: '1 / -1',
-                    textAlign: 'center',
-                    padding: '40px',
-                    color: '#718096'
-                  }}>
-                    <p>You are not currently enrolled in any courses.</p>
-                    <button
-                      onClick={() => setActiveTab("available")}
-                      style={{
-                        marginTop: '16px',
-                        backgroundColor: '#4299e1',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Browse Available Courses
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
