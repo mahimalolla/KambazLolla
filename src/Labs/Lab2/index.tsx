@@ -19,7 +19,7 @@ import Zindex from "./Zindex";
 export default function Lab2() {
   return (
     <div id="wd-lab2">
-      {/* Add the responsive screen size indicator */}
+      {/* Screen size indicator */}
       <ScreenSizeLabel />
       
       <h2>Lab 2 - Cascading Style Sheets</h2>
@@ -162,18 +162,15 @@ export default function Lab2() {
       {/* 2.1.19 – Flexbox Layout */}
       <Flex />
 
-      {/* 2.3 – Bootstrap Navigation - Move this up before other Bootstrap components */}
+      {/* 2.3 – Bootstrap Navigation */}
       <BootstrapNavigation />
 
-      {/* 2.3 – Bootstrap Grid - FULLY RESPONSIVE VERSION */}
+      {/* 2.3 – Bootstrap Grid - Basic Examples Only */}
       <div className="container mt-5">
         <h2>Bootstrap</h2>
         <h3>Grid system</h3>
         
-        {/* Static examples first (for comparison) */}
-        <h4>Static Examples (Always the same)</h4>
-        
-        {/* Two halves - Always 50/50 */}
+        {/* Two halves */}
         <div className="row mb-3">
           <div className="col-6 bg-danger text-white p-3 text-center">
             <strong>Left half</strong>
@@ -183,7 +180,7 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* One third and two thirds - Always 33/67 */}
+        {/* One third and two thirds */}
         <div className="row mb-3">
           <div className="col-4 bg-warning text-dark p-3 text-center">
             <strong>One third</strong>
@@ -193,7 +190,7 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* Three column layout - Always 16.7/66.7/16.7 */}
+        {/* Three column layout */}
         <div className="row mb-3">
           <div className="col-2 bg-dark text-white p-3 text-center">
             <strong>Sidebar</strong>
@@ -206,140 +203,66 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* NOW THE RESPONSIVE EXAMPLES - These change when you resize! */}
-        <h3 className="mt-5">🔄 RESPONSIVE Examples (Change when you resize!)</h3>
-        <div className="alert alert-info">
-          <strong>📱 Resize your browser window</strong> to see these layouts change dynamically!
-        </div>
-
-        {/* Responsive Example 1: Desktop (2 cols) → Mobile (1 col) */}
-        <h4>Example 1: Desktop (2 columns) → Mobile (1 column)</h4>
-        <div className="row mb-4">
-          <div className="col-md-6 col-12 bg-danger text-white p-3 text-center mb-2">
-            <strong>Left Column</strong><br />
-            <small>col-md-6 col-12</small><br />
-            <small>Wide screen: 50% | Small screen: 100%</small>
-          </div>
-          <div className="col-md-6 col-12 bg-primary text-white p-3 text-center mb-2">
-            <strong>Right Column</strong><br />
-            <small>col-md-6 col-12</small><br />
-            <small>Wide screen: 50% | Small screen: 100%</small>
-          </div>
-        </div>
-
-        {/* Responsive Example 2: 4 → 2 → 1 columns */}
-        <h4>Example 2: Desktop (4 cols) → Tablet (2 cols) → Mobile (1 col)</h4>
-        <div className="row mb-4">
-          <div className="col-lg-3 col-md-6 col-12 bg-warning text-center p-3 mb-2">
-            <strong>Column A</strong><br />
-            <small>col-lg-3 col-md-6 col-12</small><br />
-            <small>Large: 25% | Medium: 50% | Small: 100%</small>
-          </div>
-          <div className="col-lg-3 col-md-6 col-12 bg-primary text-white text-center p-3 mb-2">
-            <strong>Column B</strong><br />
-            <small>col-lg-3 col-md-6 col-12</small><br />
-            <small>Large: 25% | Medium: 50% | Small: 100%</small>
-          </div>
-          <div className="col-lg-3 col-md-6 col-12 bg-danger text-white text-center p-3 mb-2">
-            <strong>Column C</strong><br />
-            <small>col-lg-3 col-md-6 col-12</small><br />
-            <small>Large: 25% | Medium: 50% | Small: 100%</small>
-          </div>
-          <div className="col-lg-3 col-md-6 col-12 bg-success text-white text-center p-3 mb-2">
-            <strong>Column D</strong><br />
-            <small>col-lg-3 col-md-6 col-12</small><br />
-            <small>Large: 25% | Medium: 50% | Small: 100%</small>
-          </div>
-        </div>
-
-        {/* Responsive Example 3: Sidebar Layout */}
-        <h4>Example 3: Desktop (Main + Sidebar) → Mobile (Stacked)</h4>
-        <div className="row mb-4">
-          <div className="col-lg-8 col-12 bg-secondary text-white p-3 text-center mb-2">
-            <strong>Main Content</strong><br />
-            <small>col-lg-8 col-12</small><br />
-            <small>Large: 67% width | Small: 100% width</small>
-          </div>
-          <div className="col-lg-4 col-12 bg-info text-dark p-3 text-center mb-2">
-            <strong>Sidebar</strong><br />
-            <small>col-lg-4 col-12</small><br />
-            <small>Large: 33% width | Small: 100% width</small>
-          </div>
-        </div>
-
-        {/* The Lab 2 requirement: 12 Column Responsive Grid */}
         <h3 className="mt-5">12 Column Responsive Grid</h3>
-        <p>This shows all 12 Bootstrap columns. Try resizing to see how they adapt!</p>
-        
-        {/* Desktop: 12 columns, Tablet: 6 columns, Mobile: 4 columns */}
-        <div className="row text-center mb-4">
+        <div className="row text-center">
           {[...Array(12)].map((_, i) => (
-            <div 
-              key={i} 
-              className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 border bg-light p-2 mb-1"
-            >
-              <strong>{i + 1}</strong><br />
-              <small>Responsive</small>
+            <div key={i} className="col-1 border bg-light p-2">
+              {i + 1}
             </div>
           ))}
         </div>
 
-        {/* Dramatic Responsive Example - Like in the Lab 2 requirements */}
         <h3 className="mt-5">Responsive grid system</h3>
-        <p><strong>Watch this:</strong> XL (12 cols) → L (6 cols) → M (4 cols) → S (3 cols) → XS (2 cols)</p>
-        <div className="row mb-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-            <div 
-              key={num}
-              className={`col-xxl-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 text-center p-2 mb-2 ${
-                num % 4 === 1 ? 'bg-warning' :
-                num % 4 === 2 ? 'bg-primary text-white' :
-                num % 4 === 3 ? 'bg-danger text-white' :
-                'bg-success text-white'
-              }`}
-            >
-              <strong>{num}</strong><br />
-              <small>Multi-responsive</small>
-            </div>
-          ))}
-        </div>
-
-        {/* Recreate the visual patterns from the lab requirements */}
-        <h4 className="mt-4">Visual Pattern Examples</h4>
         
-        {/* Pattern 1: All 12 columns in different arrangements */}
+        {/* All 12 columns in one row - matches PDF requirement */}
         <div className="row mb-3">
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">1</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">2</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">3</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">4</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">5</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">6</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">7</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">8</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">9</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">10</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">11</div>
-          <div className="col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">12</div>
+          <div className="col-1 bg-warning text-center p-2">1</div>
+          <div className="col-1 bg-primary text-white text-center p-2">2</div>
+          <div className="col-1 bg-success text-white text-center p-2">3</div>
+          <div className="col-1 bg-danger text-white text-center p-2">4</div>
+          <div className="col-1 bg-warning text-center p-2">5</div>
+          <div className="col-1 bg-primary text-white text-center p-2">6</div>
+          <div className="col-1 bg-danger text-white text-center p-2">7</div>
+          <div className="col-1 bg-warning text-center p-2">8</div>
+          <div className="col-1 bg-success text-white text-center p-2">9</div>
+          <div className="col-1 bg-warning text-center p-2">10</div>
+          <div className="col-1 bg-danger text-white text-center p-2">11</div>
+          <div className="col-1 bg-success text-white text-center p-2">12</div>
         </div>
 
-        {/* Pattern 2: Grouped layouts */}
+        {/* Second row - same pattern */}
         <div className="row mb-3">
-          <div className="col-lg-4 col-md-6 col-12 bg-warning text-center p-3">
+          <div className="col-1 bg-warning text-center p-2">1</div>
+          <div className="col-1 bg-primary text-white text-center p-2">2</div>
+          <div className="col-1 bg-danger text-white text-center p-2">3</div>
+          <div className="col-1 bg-success text-white text-center p-2">4</div>
+          <div className="col-1 bg-warning text-center p-2">5</div>
+          <div className="col-1 bg-primary text-white text-center p-2">6</div>
+          <div className="col-1 bg-danger text-white text-center p-2">7</div>
+          <div className="col-1 bg-success text-white text-center p-2">8</div>
+          <div className="col-1 bg-warning text-center p-2">9</div>
+          <div className="col-1 bg-primary text-white text-center p-2">10</div>
+          <div className="col-1 bg-danger text-white text-center p-2">11</div>
+          <div className="col-1 bg-success text-white text-center p-2">12</div>
+        </div>
+
+        {/* Grouped layout pattern from PDF */}
+        <div className="row mb-3">
+          <div className="col-4 bg-warning text-center p-3">
             <div className="row">
               <div className="col p-1">1</div>
               <div className="col p-1">5</div>
               <div className="col p-1">9</div>
             </div>
           </div>
-          <div className="col-lg-4 col-md-6 col-12 bg-primary text-white text-center p-3">
+          <div className="col-4 bg-primary text-white text-center p-3">
             <div className="row">
               <div className="col p-1">2</div>
               <div className="col p-1">6</div>
               <div className="col p-1">10</div>
             </div>
           </div>
-          <div className="col-lg-4 col-12 bg-success text-white text-center p-3">
+          <div className="col-4 bg-success text-white text-center p-3">
             <div className="row">
               <div className="col-6 p-1">3</div>
               <div className="col-6 p-1">4</div>
@@ -355,7 +278,47 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* Full width stacked - Responsive version */}
+        {/* 3-3-3-3 split */}
+        <div className="row mb-3">
+          <div className="col-3 bg-warning text-center p-3">
+            <div>1</div>
+            <div>5</div>
+            <div>9</div>
+          </div>
+          <div className="col-3 bg-primary text-white text-center p-3">
+            <div>2</div>
+            <div>6</div>
+            <div>10</div>
+          </div>
+          <div className="col-3 bg-danger text-white text-center p-3">
+            <div>3</div>
+            <div>7</div>
+            <div>11</div>
+          </div>
+          <div className="col-3 bg-success text-white text-center p-3">
+            <div>4</div>
+            <div>8</div>
+            <div>12</div>
+          </div>
+        </div>
+
+        {/* Alternating colors pattern */}
+        <div className="row mb-3">
+          <div className="col-1 bg-warning p-2 text-center">1</div>
+          <div className="col-1 bg-danger text-white p-2 text-center">3</div>
+          <div className="col-1 bg-warning p-2 text-center">5</div>
+          <div className="col-1 bg-danger text-white p-2 text-center">7</div>
+          <div className="col-1 bg-warning p-2 text-center">9</div>
+          <div className="col-1 bg-danger text-white p-2 text-center">11</div>
+          <div className="col-1 bg-primary text-white p-2 text-center">2</div>
+          <div className="col-1 bg-success text-white p-2 text-center">4</div>
+          <div className="col-1 bg-primary text-white p-2 text-center">6</div>
+          <div className="col-1 bg-success text-white p-2 text-center">8</div>
+          <div className="col-1 bg-primary text-white p-2 text-center">10</div>
+          <div className="col-1 bg-success text-white p-2 text-center">12</div>
+        </div>
+
+        {/* Full width stacked */}
         <div className="row mb-3">
           <div className="col-12 bg-warning text-center p-2 mb-1">1</div>
           <div className="col-12 bg-primary text-white text-center p-2 mb-1">2</div>
@@ -365,7 +328,6 @@ export default function Lab2() {
           <div className="col-12 bg-primary text-white text-center p-2">6</div>
         </div>
       </div>
-      {/* CLOSING DIV FOR BOOTSTRAP GRID CONTAINER - THIS WAS MISSING! */}
 
       {/* 2.3.1 – Bootstrap Tables */}
       <BootstrapTables />
