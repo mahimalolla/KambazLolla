@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
-import * as coursesClient from "../Courses/client";
-import * as userClient from "../Account/client";
+import * as enrollmentClient from "./client"; // Your updated client functions
 
 export default function EnhancedEnrollments() {
   const { state } = useAuth();
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("available");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("all");
+  const [enrollmentStats, setEnrollmentStats] = useState<any>({});
 
-  // Fetch data from remote database
+  // Fetch data from remote database using your client functions
   const fetchEnrollmentData = async () => {
     try {
       setLoading(true);
       
-      // Fetch all available courses and user's enrolled courses from remote database
-      const [allCoursesData, enrolledCoursesData] = await Promise.all([
-        coursesClient.fetchAllCourses(),
-        state.user ? userClient.findMyCourses() : Promise.resolve([])
+      // Use your updated client functions
+      const [allCoursesData, enrolledCoursesData, availableCoursesData, statsData] = await Promise.all([
+        enrollmentClient.findAllCourses(),
+        state.user ? enrollmentClient.findMyCourses() : Promise.resolve([]),
+        state.user ? enrollmentClient.getAvailableCoursesForUser() : Promise.resolve([]),
+        state.user ? enrollmentClient.getUserEnrollmentStats() : Promise.resolve({})
       ]);
       
       setAllCourses(allCoursesData || []);
       setEnrolledCourses(enrolledCoursesData || []);
+      setAvailableCourses(availableCoursesData || []);
+      setEnrollmentStats(statsData || {});
       
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
@@ -45,8 +50,24 @@ export default function EnhancedEnrollments() {
     try {
       setLoading(true);
       
-      // Call remote API to enroll user
-      await coursesClient.enrollInCourse(courseId);
+      // Check eligibility first
+      const eligibility = await enrollmentClient.validateEnrollmentEligibility(state.user._id, courseId);
+      if (!eligibility.eligible) {
+        setMessage(`❌ Cannot enroll: ${eligibility.reason}`);
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+      
+      // Check course availability
+      const availability = await enrollmentClient.checkCourseAvailability(courseId);
+      if (!availability.available) {
+        setMessage(`❌ Course not available: ${availability.reason}`);
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+      
+      // Enroll using your updated client function
+      await enrollmentClient.enrollInCourse(state.user._id, courseId);
       
       setMessage(`✅ Successfully enrolled in ${courseName}!`);
       
@@ -54,9 +75,9 @@ export default function EnhancedEnrollments() {
       await fetchEnrollmentData();
       
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error enrolling in course:", error);
-      setMessage(`❌ Failed to enroll in ${courseName}. Please try again.`);
+      setMessage(error.message || `❌ Failed to enroll in ${courseName}. Please try again.`);
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
@@ -66,15 +87,15 @@ export default function EnhancedEnrollments() {
   const handleUnenroll = async (courseId: string, courseName: string) => {
     if (!state.user) return;
     
-    if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
+    if (!window.confirm(`Are you sure you want to drop "${courseName}"? This action cannot be undone.`)) {
       return;
     }
     
     try {
       setLoading(true);
       
-      // Call remote API to unenroll user
-      await coursesClient.unenrollFromCourse(courseId);
+      // Unenroll using your updated client function
+      await enrollmentClient.unenrollFromCourse(state.user._id, courseId);
       
       setMessage(`✅ Successfully dropped ${courseName}!`);
       
@@ -82,21 +103,13 @@ export default function EnhancedEnrollments() {
       await fetchEnrollmentData();
       
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error unenrolling from course:", error);
-      setMessage(`❌ Failed to drop ${courseName}. Please try again.`);
+      setMessage(error.message || `❌ Failed to drop ${courseName}. Please try again.`);
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
     }
-  };
-
-  const isEnrolled = (courseId: string) => {
-    return enrolledCourses.some((course: any) => course._id === courseId);
-  };
-
-  const getAvailableCourses = () => {
-    return allCourses.filter(course => !isEnrolled(course._id));
   };
 
   const getFilteredCourses = (courses: any[]) => {
@@ -136,6 +149,8 @@ export default function EnhancedEnrollments() {
       // Reset data for non-authenticated users
       setAllCourses([]);
       setEnrolledCourses([]);
+      setAvailableCourses([]);
+      setEnrollmentStats({});
     }
   }, [state.user]);
 
@@ -181,8 +196,8 @@ export default function EnhancedEnrollments() {
     );
   }
 
-  const availableCourses = getFilteredCourses(getAvailableCourses());
-  const myEnrolledCourses = getFilteredCourses(enrolledCourses);
+  const filteredAvailableCourses = getFilteredCourses(availableCourses);
+  const filteredEnrolledCourses = getFilteredCourses(enrolledCourses);
 
   return (
     <div style={{ 
@@ -219,7 +234,7 @@ export default function EnhancedEnrollments() {
             }
           </p>
           
-          {/* Stats */}
+          {/* Enhanced Stats */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -233,10 +248,10 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>
-                {enrolledCourses.length}
+                {enrollmentStats.activeEnrollments || enrolledCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#1e40af' }}>
-                Enrolled Courses
+                Active Enrollments
               </div>
             </div>
             
@@ -261,9 +276,23 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#92400e' }}>
-                {allCourses.length}
+                {enrollmentStats.totalAssignmentsCompleted || 0}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#92400e' }}>
+                Assignments Completed
+              </div>
+            </div>
+
+            <div style={{
+              backgroundColor: '#fde2e7',
+              padding: '16px',
+              borderRadius: '12px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#be185d' }}>
+                {allCourses.length}
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#be185d' }}>
                 Total Courses
               </div>
             </div>
@@ -397,7 +426,7 @@ export default function EnhancedEnrollments() {
                   fontSize: '1rem'
                 }}
               >
-                📋 Available Courses ({availableCourses.length})
+                📋 Available Courses ({filteredAvailableCourses.length})
               </button>
               <button
                 onClick={() => setActiveTab("enrolled")}
@@ -413,7 +442,7 @@ export default function EnhancedEnrollments() {
                   fontSize: '1rem'
                 }}
               >
-                ✅ My Enrollments ({myEnrolledCourses.length})
+                ✅ My Enrollments ({filteredEnrolledCourses.length})
               </button>
             </div>
 
@@ -421,13 +450,13 @@ export default function EnhancedEnrollments() {
               {/* Available Courses Tab */}
               {activeTab === "available" && (
                 <div>
-                  {availableCourses.length > 0 ? (
+                  {filteredAvailableCourses.length > 0 ? (
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
                       gap: '20px'
                     }}>
-                      {availableCourses.map((course: any) => (
+                      {filteredAvailableCourses.map((course: any) => (
                         <div key={course._id} style={{
                           border: '2px solid #e2e8f0',
                           borderRadius: '12px',
@@ -535,13 +564,13 @@ export default function EnhancedEnrollments() {
               {/* Enrolled Courses Tab */}
               {activeTab === "enrolled" && (
                 <div>
-                  {myEnrolledCourses.length > 0 ? (
+                  {filteredEnrolledCourses.length > 0 ? (
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
                       gap: '20px'
                     }}>
-                      {myEnrolledCourses.map((course: any) => (
+                      {filteredEnrolledCourses.map((course: any) => (
                         <div key={course._id} style={{
                           border: '2px solid #48bb78',
                           borderRadius: '12px',
