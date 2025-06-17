@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import * as db from './Kambaz/Database/index'; 
+import axios from 'axios';
+
+// Create axios instance with credentials for CORS support
+const axiosWithCredentials = axios.create({ withCredentials: true });
+const REMOTE_SERVER = import.meta.env.VITE_REMOTE_SERVER;
+const USERS_API = `${REMOTE_SERVER}/api/users`;
 
 // Types
 interface User {
@@ -117,33 +122,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Restore session on app load
   useEffect(() => {
-    const storedUser = localStorage.getItem('kambaz_user');
-    const loginTime = localStorage.getItem('kambaz_login_time');
-    
-    if (storedUser && loginTime) {
+    const fetchProfile = async () => {
       try {
-        const user = JSON.parse(storedUser);
-        const loginTimestamp = parseInt(loginTime);
-        const currentTime = Date.now();
-        
-        // Check if session is still valid (e.g., within 24 hours)
-        const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-        
-        if (currentTime - loginTimestamp < SESSION_DURATION) {
-          // Update last activity
-          db.updateUser(user._id, { lastActivity: new Date().toISOString() });
-          dispatch({ type: 'RESTORE_SESSION', payload: user });
-        } else {
-          // Session expired, clear storage
-          localStorage.removeItem('kambaz_user');
-          localStorage.removeItem('kambaz_login_time');
+        const response = await axiosWithCredentials.post(`${USERS_API}/profile`);
+        if (response.data) {
+          dispatch({ type: 'RESTORE_SESSION', payload: response.data });
         }
       } catch (error) {
-        console.error('Error restoring session:', error);
-        localStorage.removeItem('kambaz_user');
-        localStorage.removeItem('kambaz_login_time');
+        // No session to restore or session expired
+        console.log('No active session found');
       }
-    }
+    };
+
+    fetchProfile();
   }, []);
 
   // Login function
@@ -151,40 +142,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await axiosWithCredentials.post(`${USERS_API}/signin`, {
+        username,
+        password
+      });
 
-      const dbUser = db.findUserByCredentials(username, password);
-      
-      if (!dbUser) {
+      if (response.data) {
+        const user: User = {
+          _id: response.data._id,
+          username: response.data.username,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email,
+          role: response.data.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
+        };
+
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+        return true;
+      } else {
         dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid username or password' });
         return false;
       }
-
-      // Update user login time in database
-      const loginTime = new Date().toISOString();
-      db.updateUser(dbUser._id, { 
-        loginTime: loginTime,
-        lastActivity: loginTime 
-      });
-
-      const user: User = {
-        _id: dbUser._id,
-        username: dbUser.username,
-        firstName: dbUser.firstName,
-        lastName: dbUser.lastName,
-        email: dbUser.email,
-        role: dbUser.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
-      };
-
-      // Store in localStorage for persistence
-      localStorage.setItem('kambaz_user', JSON.stringify(user));
-      localStorage.setItem('kambaz_login_time', Date.now().toString());
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      return true;
-    } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: 'An error occurred during login' });
+    } catch (error: any) {
+      let errorMessage = 'An error occurred during login';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Invalid username or password';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
   };
@@ -194,43 +182,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      // Check if username already exists
-      const existingUser = db.findUserByUsername(userData.username);
-      if (existingUser) {
-        dispatch({ type: 'LOGIN_FAILURE', payload: 'Username already exists' });
-        return false;
-      }
-
-      // Create new user
-      const newUser = db.createUser({
+      const response = await axiosWithCredentials.post(`${USERS_API}/signup`, {
         username: userData.username,
         password: userData.password,
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
-        role: userData.role || 'STUDENT',
-        dob: new Date().toISOString().split('T')[0], // Default DOB
-        loginTime: new Date().toISOString(),
-        lastActivity: new Date().toISOString()
+        role: userData.role || 'STUDENT'
       });
 
-      const user: User = {
-        _id: newUser._id,
-        username: newUser.username,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        role: newUser.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
-      };
+      if (response.data) {
+        const user: User = {
+          _id: response.data._id,
+          username: response.data.username,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email,
+          role: response.data.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
+        };
 
-      // Store in localStorage
-      localStorage.setItem('kambaz_user', JSON.stringify(user));
-      localStorage.setItem('kambaz_login_time', Date.now().toString());
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      return true;
-    } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: 'An error occurred during registration' });
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+        return true;
+      } else {
+        dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration failed' });
+        return false;
+      }
+    } catch (error: any) {
+      let errorMessage = 'An error occurred during registration';
+      
+      if (error.response?.status === 400) {
+        errorMessage = error.response.data.message || 'Username already exists';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
       return false;
     }
   };
@@ -243,53 +229,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
-      // Update user in database
-      const updatedDbUser = db.updateUser(state.user._id, {
+      const response = await axiosWithCredentials.put(`${USERS_API}/${state.user._id}`, {
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
-        username: userData.username,
-        lastActivity: new Date().toISOString()
+        username: userData.username
       });
 
-      if (!updatedDbUser) {
+      if (response.data) {
+        const updatedUser: User = {
+          _id: response.data._id,
+          username: response.data.username,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email,
+          role: response.data.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
+        };
+
+        dispatch({ type: 'UPDATE_PROFILE_SUCCESS', payload: updatedUser });
+        return true;
+      } else {
         dispatch({ type: 'SET_ERROR', payload: 'Failed to update profile' });
         return false;
       }
-
-      const updatedUser: User = {
-        _id: updatedDbUser._id,
-        username: updatedDbUser.username,
-        firstName: updatedDbUser.firstName,
-        lastName: updatedDbUser.lastName,
-        email: updatedDbUser.email,
-        role: updatedDbUser.role as 'STUDENT' | 'FACULTY' | 'ADMIN'
-      };
-
-      // Update localStorage
-      localStorage.setItem('kambaz_user', JSON.stringify(updatedUser));
-
-      dispatch({ type: 'UPDATE_PROFILE_SUCCESS', payload: updatedUser });
-      return true;
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'An error occurred while updating profile' });
+    } catch (error: any) {
+      let errorMessage = 'An error occurred while updating profile';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
       return false;
     }
   };
 
   // Logout function
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await axiosWithCredentials.post(`${USERS_API}/signout`);
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+    
     // Clear localStorage
     localStorage.removeItem('kambaz_user');
     localStorage.removeItem('kambaz_login_time');
     localStorage.removeItem('kambaz_remember_user');
-    
-    // Update last activity in database if user exists
-    if (state.user) {
-      db.updateUser(state.user._id, { 
-        lastActivity: new Date().toISOString() 
-      });
-    }
 
     dispatch({ type: 'LOGOUT' });
   };
