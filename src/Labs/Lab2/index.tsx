@@ -165,12 +165,12 @@ export default function Lab2() {
       {/* 2.3 – Bootstrap Navigation */}
       <BootstrapNavigation />
 
-      {/* 2.3 – Bootstrap Grid - Basic Examples Only */}
+      {/* 2.3 – Bootstrap Grid System (PDF Requirements Only) */}
       <div className="container mt-5">
         <h2>Bootstrap</h2>
         <h3>Grid system</h3>
         
-        {/* Two halves */}
+        {/* Basic Grid Examples */}
         <div className="row mb-3">
           <div className="col-6 bg-danger text-white p-3 text-center">
             <strong>Left half</strong>
@@ -180,7 +180,6 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* One third and two thirds */}
         <div className="row mb-3">
           <div className="col-4 bg-warning text-dark p-3 text-center">
             <strong>One third</strong>
@@ -190,7 +189,6 @@ export default function Lab2() {
           </div>
         </div>
 
-        {/* Three column layout */}
         <div className="row mb-3">
           <div className="col-2 bg-dark text-white p-3 text-center">
             <strong>Sidebar</strong>
@@ -203,6 +201,7 @@ export default function Lab2() {
           </div>
         </div>
 
+        {/* 12 Column Responsive Grid - DYNAMIC */}
         <h3 className="mt-5">12 Column Responsive Grid</h3>
         <div className="row text-center">
           {[...Array(12)].map((_, i) => (
@@ -212,113 +211,112 @@ export default function Lab2() {
           ))}
         </div>
 
+        {/* Responsive grid system - DYNAMIC (matches PDF images) */}
         <h3 className="mt-5">Responsive grid system</h3>
         
-        {/* All 12 columns in one row - matches PDF requirement */}
+        {/* Row 1: All 12 columns - responsive */}
         <div className="row mb-3">
-          <div className="col-1 bg-warning text-center p-2">1</div>
-          <div className="col-1 bg-primary text-white text-center p-2">2</div>
-          <div className="col-1 bg-success text-white text-center p-2">3</div>
-          <div className="col-1 bg-danger text-white text-center p-2">4</div>
-          <div className="col-1 bg-warning text-center p-2">5</div>
-          <div className="col-1 bg-primary text-white text-center p-2">6</div>
-          <div className="col-1 bg-danger text-white text-center p-2">7</div>
-          <div className="col-1 bg-warning text-center p-2">8</div>
-          <div className="col-1 bg-success text-white text-center p-2">9</div>
-          <div className="col-1 bg-warning text-center p-2">10</div>
-          <div className="col-1 bg-danger text-white text-center p-2">11</div>
-          <div className="col-1 bg-success text-white text-center p-2">12</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">1</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">2</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">3</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">4</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">5</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">6</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">7</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">8</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">9</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">10</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">11</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">12</div>
         </div>
 
-        {/* Second row - same pattern */}
+        {/* Row 2: Same pattern, different arrangement */}
         <div className="row mb-3">
-          <div className="col-1 bg-warning text-center p-2">1</div>
-          <div className="col-1 bg-primary text-white text-center p-2">2</div>
-          <div className="col-1 bg-danger text-white text-center p-2">3</div>
-          <div className="col-1 bg-success text-white text-center p-2">4</div>
-          <div className="col-1 bg-warning text-center p-2">5</div>
-          <div className="col-1 bg-primary text-white text-center p-2">6</div>
-          <div className="col-1 bg-danger text-white text-center p-2">7</div>
-          <div className="col-1 bg-success text-white text-center p-2">8</div>
-          <div className="col-1 bg-warning text-center p-2">9</div>
-          <div className="col-1 bg-primary text-white text-center p-2">10</div>
-          <div className="col-1 bg-danger text-white text-center p-2">11</div>
-          <div className="col-1 bg-success text-white text-center p-2">12</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">1</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">2</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">3</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">4</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">5</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">6</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">7</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-warning text-center p-2">8</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">9</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-primary text-white text-center p-2">10</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-danger text-white text-center p-2">11</div>
+          <div className="col-xxl-1 col-xl-1 col-lg-2 col-md-3 col-sm-4 col-6 bg-success text-white text-center p-2">12</div>
         </div>
 
-        {/* Grouped layout pattern from PDF */}
+        {/* Row 3: Grouped layout (matches PDF pattern) */}
         <div className="row mb-3">
-          <div className="col-4 bg-warning text-center p-3">
+          <div className="col-lg-4 col-md-6 col-12 bg-warning text-center p-3">
             <div className="row">
               <div className="col p-1">1</div>
               <div className="col p-1">5</div>
               <div className="col p-1">9</div>
             </div>
           </div>
-          <div className="col-4 bg-primary text-white text-center p-3">
+          <div className="col-lg-4 col-md-6 col-12 bg-primary text-white text-center p-3">
             <div className="row">
               <div className="col p-1">2</div>
               <div className="col p-1">6</div>
               <div className="col p-1">10</div>
             </div>
           </div>
-          <div className="col-4 bg-success text-white text-center p-3">
+          <div className="col-lg-4 col-12 bg-success text-white text-center p-3">
             <div className="row">
-              <div className="col-6 p-1">3</div>
-              <div className="col-6 p-1">4</div>
+              <div className="col-4 p-1">3</div>
+              <div className="col-4 p-1">4</div>
+              <div className="col-4 p-1">7</div>
             </div>
             <div className="row">
-              <div className="col-4 p-1">7</div>
               <div className="col-4 p-1">8</div>
               <div className="col-4 p-1">11</div>
-            </div>
-            <div className="row">
-              <div className="col p-1">12</div>
+              <div className="col-4 p-1">12</div>
             </div>
           </div>
         </div>
 
-        {/* 3-3-3-3 split */}
+        {/* Row 4: Quarter sections (matches PDF) */}
         <div className="row mb-3">
-          <div className="col-3 bg-warning text-center p-3">
+          <div className="col-lg-3 col-md-6 col-12 bg-warning text-center p-3">
             <div>1</div>
             <div>5</div>
             <div>9</div>
           </div>
-          <div className="col-3 bg-primary text-white text-center p-3">
+          <div className="col-lg-3 col-md-6 col-12 bg-primary text-white text-center p-3">
             <div>2</div>
             <div>6</div>
             <div>10</div>
           </div>
-          <div className="col-3 bg-danger text-white text-center p-3">
+          <div className="col-lg-3 col-md-6 col-12 bg-danger text-white text-center p-3">
             <div>3</div>
             <div>7</div>
             <div>11</div>
           </div>
-          <div className="col-3 bg-success text-white text-center p-3">
+          <div className="col-lg-3 col-md-6 col-12 bg-success text-white text-center p-3">
             <div>4</div>
             <div>8</div>
             <div>12</div>
           </div>
         </div>
 
-        {/* Alternating colors pattern */}
+        {/* Row 5: Mixed layout */}
         <div className="row mb-3">
-          <div className="col-1 bg-warning p-2 text-center">1</div>
-          <div className="col-1 bg-danger text-white p-2 text-center">3</div>
-          <div className="col-1 bg-warning p-2 text-center">5</div>
-          <div className="col-1 bg-danger text-white p-2 text-center">7</div>
-          <div className="col-1 bg-warning p-2 text-center">9</div>
-          <div className="col-1 bg-danger text-white p-2 text-center">11</div>
-          <div className="col-1 bg-primary text-white p-2 text-center">2</div>
-          <div className="col-1 bg-success text-white p-2 text-center">4</div>
-          <div className="col-1 bg-primary text-white p-2 text-center">6</div>
-          <div className="col-1 bg-success text-white p-2 text-center">8</div>
-          <div className="col-1 bg-primary text-white p-2 text-center">10</div>
-          <div className="col-1 bg-success text-white p-2 text-center">12</div>
+          <div className="col-md-1 col-6 bg-warning text-center p-2">1</div>
+          <div className="col-md-1 col-6 bg-danger text-white text-center p-2">3</div>
+          <div className="col-md-1 col-6 bg-warning text-center p-2">5</div>
+          <div className="col-md-1 col-6 bg-danger text-white text-center p-2">7</div>
+          <div className="col-md-1 col-6 bg-warning text-center p-2">9</div>
+          <div className="col-md-1 col-6 bg-danger text-white text-center p-2">11</div>
+          <div className="col-md-1 col-6 bg-primary text-white text-center p-2">2</div>
+          <div className="col-md-1 col-6 bg-success text-white text-center p-2">4</div>
+          <div className="col-md-1 col-6 bg-primary text-white text-center p-2">6</div>
+          <div className="col-md-1 col-6 bg-success text-white text-center p-2">8</div>
+          <div className="col-md-1 col-6 bg-primary text-white text-center p-2">10</div>
+          <div className="col-md-1 col-6 bg-success text-white text-center p-2">12</div>
         </div>
 
-        {/* Full width stacked */}
+        {/* Row 6: Full width stacked */}
         <div className="row mb-3">
           <div className="col-12 bg-warning text-center p-2 mb-1">1</div>
           <div className="col-12 bg-primary text-white text-center p-2 mb-1">2</div>
@@ -329,16 +327,12 @@ export default function Lab2() {
         </div>
       </div>
 
-      {/* 2.3.1 – Bootstrap Tables */}
+      {/* Bootstrap Components */}
       <BootstrapTables />
-
-      {/* 2.3.2 – Bootstrap Lists */}
       <BootstrapLists />
-
-      {/* 2.3.3 – Bootstrap Forms */}
       <BootstrapForms />
 
-      {/* 2.3.5 – Bootstrap Cards */}
+      {/* Bootstrap Cards */}
       <div className="container mt-5">
         <h2>Cards</h2>
         <div className="card" style={{ width: "18rem", marginBottom: "20px" }}>
@@ -357,7 +351,6 @@ export default function Lab2() {
           </div>
         </div>
         
-        {/* Backup card with solid background if image fails */}
         <div className="card" style={{ width: "18rem", backgroundColor: "#f8f9fa", border: "2px solid #007bff" }}>
           <div className="card-header bg-primary text-white">
             <strong>Starship Image</strong>
