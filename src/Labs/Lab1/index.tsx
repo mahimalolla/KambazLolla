@@ -1,4 +1,5 @@
 import './index.css';
+import { Link } from "react-router-dom";
 
 export default function Lab1() {
   return (
@@ -202,10 +203,12 @@ export default function Lab1() {
       <hr />
       <h4>Navigation</h4>
       <ul>
-        <li><a href="/Labs/Lab1">Lab 1</a></li>
-        <li><a href="/Labs/Lab2">Lab 2</a></li>
-        <li><a href="/Labs/Lab3">Lab 3</a></li>
-        <li><a href="/Kambaz/Account">Kambaz App</a></li>
+        <li><Link to="/Labs/Lab1">Lab 1</Link></li>
+        <li><Link to="/Labs/Lab2">Lab 2</Link></li>
+        <li><Link to="/Labs/Lab3">Lab 3</Link></li>
+        <li><Link to="/Labs/Lab4">Lab 4</Link></li>
+        <li><Link to="/Labs/Lab5">Lab 5</Link></li>
+        <li><Link to="/Kambaz/Account">Kambaz App</Link></li>
         <li><a href="https://github.com/mahimalolla" target="_blank" rel="noreferrer">GitHub Repository</a></li>
       </ul>
     </div>
