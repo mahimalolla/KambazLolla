@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../AuthContext"; // Add this import
+import { useAuth } from "../../../AuthContext"; 
 import * as db from "../../Database";
 
 export default function AssignmentEditor() {
