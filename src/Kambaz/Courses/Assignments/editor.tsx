@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../AuthContext"; // Add this import
 import * as db from "../../Database";
 
 export default function AssignmentEditor() {
-  const { cid, aid } = useParams(); // Get both course ID and assignment ID
+  const { cid, aid } = useParams();
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { state } = useAuth(); // Use AuthContext instead of localStorage
   
   // Determine if we're editing an existing assignment
   const isEditing = !!aid;
@@ -32,32 +33,28 @@ export default function AssignmentEditor() {
 
   // Check authentication and role on component mount
   useEffect(() => {
-    const stored = localStorage.getItem('kambaz_user');
-    if (!stored) {
+    if (!state.isAuthenticated || !state.user) {
       // Not signed in - redirect to signin
       navigate("/Kambaz/Account/Signin");
       return;
     }
 
-    const user = JSON.parse(stored);
-    setCurrentUser(user);
-
     // If not faculty, redirect back to assignments
-    if (user.role !== "FACULTY") {
+    if (state.user.role !== "FACULTY") {
       alert("Access Denied: Only faculty members can edit assignments.");
       navigate(`/Kambaz/Courses/${cid}/Assignments`);
       return;
     }
-  }, [navigate, cid]);
+  }, [navigate, cid, state.isAuthenticated, state.user]);
 
   // Load existing assignment data if editing
   useEffect(() => {
-    if (isEditing && aid && currentUser?.role === "FACULTY") {
-      console.log('Loading assignment with ID:', aid); // Debug log
+    if (isEditing && aid && state.user?.role === "FACULTY") {
+      console.log('Loading assignment with ID:', aid);
       const existingAssignment = db.assignments.find(a => a._id === aid);
       
       if (existingAssignment) {
-        console.log('Found existing assignment:', existingAssignment); // Debug log
+        console.log('Found existing assignment:', existingAssignment);
         setAssignment({
           name: existingAssignment.title || "Untitled Assignment",
           description: existingAssignment.description || "",
@@ -83,7 +80,7 @@ export default function AssignmentEditor() {
         navigate(`/Kambaz/Courses/${cid}/Assignments`);
       }
     }
-  }, [aid, isEditing, currentUser, cid, navigate]);
+  }, [aid, isEditing, state.user, cid, navigate]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setAssignment(prev => ({
@@ -130,7 +127,7 @@ export default function AssignmentEditor() {
       } else {
         // Create new assignment
         const newAssignment = {
-          _id: `A${Date.now()}`, // Generate unique ID
+          _id: `A${Date.now()}`,
           title: assignment.name,
           description: assignment.description,
           points: assignment.points,
@@ -142,14 +139,13 @@ export default function AssignmentEditor() {
           dueDate: assignment.due,
           availableFrom: assignment.availableFrom,
           until: assignment.until,
-          course: cid // Associate with current course
+          course: cid
         };
         
         db.assignments.push(newAssignment);
         alert("Assignment created successfully!");
       }
       
-      // Navigate back to assignments list
       navigate(`/Kambaz/Courses/${cid}/Assignments`);
     } catch (error) {
       console.error('Error saving assignment:', error);
@@ -164,7 +160,7 @@ export default function AssignmentEditor() {
   };
 
   // Show loading while checking authentication
-  if (!currentUser) {
+  if (!state.isAuthenticated || !state.user) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
         <div className="spinner-border text-primary" role="status">
@@ -174,8 +170,8 @@ export default function AssignmentEditor() {
     );
   }
 
-  // This shouldn't show if useEffect redirects properly, but just in case
-  if (currentUser.role !== "FACULTY") {
+  // Access denied for non-faculty
+  if (state.user.role !== "FACULTY") {
     return (
       <div className="container mt-4">
         <div className="alert alert-danger">
@@ -192,6 +188,9 @@ export default function AssignmentEditor() {
     );
   }
 
+  // Get current user from AuthContext
+  const currentUser = state.user;
+  
   // Page title based on mode
   const pageTitle = isEditing ? "Edit Assignment" : "New Assignment";
   const saveButtonText = isEditing ? "Update Assignment" : "Save Assignment";
@@ -452,12 +451,14 @@ export default function AssignmentEditor() {
         </button>
       </div>
 
-      {/* Debug Info (remove in production) */}
+      {/* Debug Info */}
       <div className="mt-4 p-3 bg-light rounded small">
         <strong>Debug Info:</strong>
         <br />Course ID: {cid}
         <br />Assignment ID: {aid || 'New Assignment'}
         <br />Mode: {isEditing ? 'Editing' : 'Creating'}
+        <br />Auth Status: {state.isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
+        <br />User: {currentUser.firstName} {currentUser.lastName} ({currentUser.role})
       </div>
     </div>
   );
