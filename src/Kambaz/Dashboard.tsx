@@ -174,28 +174,57 @@ export default function Dashboard() {
     }
   };
 
-  const handleUnenroll = (courseId: string, courseName: string) => {
-    if (!currentUser) return;
+// COMPLETE FIX: Replace your entire handleUnenroll function with this:
+
+const handleUnenroll = (courseId: string, courseName: string) => {
+  if (!currentUser) {
+    setMessage("❌ User not authenticated");
+    setTimeout(() => setMessage(""), 3000);
+    return;
+  }
+  
+  if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
+    return;
+  }
+  
+  try {
+    setLoading(true);
     
-    if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
-      return;
+    // Check if unenrollUserFromCourse function exists in db
+    if (typeof db.unenrollUserFromCourse === 'function') {
+      // Use the proper unenroll function
+      db.unenrollUserFromCourse(currentUser._id, courseId);
+    } else {
+      // Fallback: manually filter enrollments if function doesn't exist
+      console.warn("unenrollUserFromCourse function not found, attempting manual removal");
+      
+      // You'll need to access your enrollments array - adjust this based on your Database.ts structure
+      // This is a temporary workaround
+      const enrollmentIndex = db.enrollments?.findIndex(enrollment => 
+        enrollment.user === currentUser._id && enrollment.course === courseId
+      );
+      
+      if (enrollmentIndex !== -1 && enrollmentIndex !== undefined) {
+        db.enrollments.splice(enrollmentIndex, 1);
+      } else {
+        throw new Error("Enrollment not found");
+      }
     }
     
-    try {
-      setLoading(true);
-      // Remove from enrollments (you may need to implement this in your Database.ts)
-      // For now, we'll simulate it
-      loadUserData();
-      setMessage(`✅ Successfully dropped ${courseName}!`);
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
-      console.error("Error unenrolling:", error);
-      setMessage(`❌ Failed to drop ${courseName}`);
-      setTimeout(() => setMessage(""), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Reload user data to reflect the changes
+    loadUserData();
+    
+    setMessage(`✅ Successfully dropped ${courseName}!`);
+    setTimeout(() => setMessage(""), 3000);
+    
+  } catch (error) {
+    console.error("Error unenrolling:", error);
+    setMessage(`❌ Failed to drop ${courseName}: ${error.message || 'Unknown error'}`);
+    setTimeout(() => setMessage(""), 3000);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Filter courses based on search
   const getFilteredCourses = (courseList: any[]) => {
