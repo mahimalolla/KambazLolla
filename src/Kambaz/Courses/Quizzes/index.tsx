@@ -1,17 +1,18 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import Breadcrumbs from "../Breadcrumbs";
-import { FaRocket, FaSearch } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaRocket, FaSearch, FaPlus, FaEdit, FaTrash, FaCopy } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { useAuth } from "../../AuthContext"; 
 
-const quizzes = [
+const initialQuizzes = [
   { 
     _id: "Q1", 
     title: "Q1", 
     due: "May 19 at 11:59pm", 
     points: 29,
     questions: 11,
-    status: "Closed"
+    status: "Closed",
+    published: true,
+    courseId: "course1"
   },
   { 
     _id: "Q2", 
@@ -19,23 +20,9 @@ const quizzes = [
     due: "May 21 at 11:59pm", 
     points: 23,
     questions: 6,
-    status: "Closed"
-  },
-  { 
-    _id: "Q3", 
-    title: "Q3", 
-    due: "May 26 at 11:59pm", 
-    points: 32,
-    questions: 7,
-    status: "Closed"
-  },
-  { 
-    _id: "Q4", 
-    title: "Q4", 
-    due: "May 28 at 11:59pm", 
-    points: 17,
-    questions: 3,
-    status: "Closed"
+    status: "Closed",
+    published: true,
+    courseId: "course1"
   },
   { 
     _id: "Q5", 
@@ -44,30 +31,72 @@ const quizzes = [
     due: "Jun 2 at 11:59pm", 
     points: 31,
     questions: 8,
-    status: "Available"
-  },
-  { 
-    _id: "X1", 
-    title: "X1", 
-    availableUntil: "Jun 4 at 11:59pm",
-    due: "Jun 4 at 11:59pm", 
-    points: 100,
-    questions: 15,
-    status: "Available"
+    status: "Available",
+    published: true,
+    courseId: "course1"
   },
   { 
     _id: "Q6", 
-    title: "Q6", 
+    title: "Q6 - Unpublished", 
     availableUntil: "Jun 3 at 12am",
     due: "Jun 9 at 11:59pm", 
     points: 18,
     questions: 3,
-    status: "Not available"
+    status: "Not available",
+    published: false,
+    courseId: "course1"
   }
 ];
 
 export default function QuizList() {
+  const { state } = useAuth(); // Get auth state
+  const cid = "course1"; // Course ID - replace with useParams()
+  const navigate = (path: string) => console.log("Navigate to:", path); // Replace with useNavigate()
   const [searchTerm, setSearchTerm] = useState("");
+  const [quizzes, setQuizzes] = useState(initialQuizzes);
+  const [showContextMenu, setShowContextMenu] = useState<string | null>(null);
+
+  // Handle authentication loading state
+  if (state.isLoading) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading quizzes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle unauthenticated state
+  if (!state.isAuthenticated || !state.user) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="text-center py-5">
+          <h5 className="text-danger">Access Denied</h5>
+          <p className="text-muted">You must be logged in to view quizzes.</p>
+          <a href="/Kambaz/Account/Signin" className="btn btn-primary">
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const isFaculty = state.user.role === 'FACULTY' || state.user.role === 'ADMIN';
+  const isStudent = state.user.role === 'STUDENT';
+
+  // Filter quizzes based on course and search
+  const filteredQuizzes = quizzes
+    .filter(quiz => quiz.courseId === cid)
+    .filter(quiz => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(quiz => {
+      // Students only see published quizzes
+      if (isStudent) return quiz.published;
+      return true; // Faculty see all
+    });
 
   const getStatusText = (quiz: any) => {
     if (quiz.status === "Closed") {
@@ -82,13 +111,134 @@ export default function QuizList() {
     return "";
   };
 
-  const filteredQuizzes = quizzes.filter(quiz =>
-    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleAddQuiz = () => {
+    const newQuiz = {
+      _id: `Q_${Date.now()}`,
+      title: `New Quiz ${filteredQuizzes.length + 1}`,
+      due: new Date().toLocaleDateString(),
+      points: 0,
+      questions: 0,
+      status: "Not available",
+      published: false,
+      courseId: cid
+    };
+    
+    setQuizzes([...quizzes, newQuiz]);
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
+  };
+
+  const handlePublishToggle = (quizId: string) => {
+    setQuizzes(quizzes.map(quiz => 
+      quiz._id === quizId 
+        ? { ...quiz, published: !quiz.published }
+        : quiz
+    ));
+    setShowContextMenu(null);
+  };
+
+  const handleDeleteQuiz = (quizId: string) => {
+    if (window.confirm('Are you sure you want to delete this quiz?')) {
+      setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
+    }
+    setShowContextMenu(null);
+  };
+
+  const handleEditQuiz = (quizId: string) => {
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/edit`);
+    setShowContextMenu(null);
+  };
+
+  const handleTakeQuiz = (quizId: string) => {
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/take`);
+  };
+
+  const handlePreviewQuiz = (quizId: string) => {
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/preview`);
+  };
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowContextMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const ContextMenu = ({ quizId, quiz }: { quizId: string, quiz: any }) => (
+    <div className="dropdown-menu show position-absolute" style={{ zIndex: 1000 }}>
+      {isFaculty && (
+        <>
+          <button 
+            className="dropdown-item" 
+            onClick={() => handleEditQuiz(quizId)}
+          >
+            <FaEdit className="me-2" size={12} />
+            Edit
+          </button>
+          <button 
+            className="dropdown-item" 
+            onClick={() => handlePublishToggle(quizId)}
+          >
+            {quiz.published ? '🚫' : '✅'} {quiz.published ? 'Unpublish' : 'Publish'}
+          </button>
+          <button 
+            className="dropdown-item" 
+            onClick={() => handlePreviewQuiz(quizId)}
+          >
+            👁️ Preview
+          </button>
+          <div className="dropdown-divider"></div>
+          <button 
+            className="dropdown-item text-danger" 
+            onClick={() => handleDeleteQuiz(quizId)}
+          >
+            <FaTrash className="me-2" size={12} />
+            Delete
+          </button>
+        </>
+      )}
+    </div>
   );
 
   return (
     <div className="container-fluid px-4 py-3">
-      <Breadcrumbs />
+      {/* User Context Header */}
+      <div className="row mb-3">
+        <div className="col-12">
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <small className="text-muted">
+                Logged in as: <strong>{state.user.firstName} {state.user.lastName}</strong> 
+                <span className={`ms-2 badge ${
+                  isFaculty ? 'bg-primary' : 'bg-success'
+                }`}>
+                  {state.user.role}
+                </span>
+              </small>
+            </div>
+            <div>
+              <small className="text-muted">Course: {cid}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="fw-bold">
+          Quizzes
+          {isFaculty && <small className="text-muted ms-2">(Faculty View)</small>}
+          {isStudent && <small className="text-muted ms-2">(Student View)</small>}
+        </h4>
+        {isFaculty && (
+          <button 
+            className="btn btn-primary"
+            onClick={handleAddQuiz}
+          >
+            <FaPlus className="me-1" size={12} />
+            Quiz
+          </button>
+        )}
+      </div>
       
       {/* Search Bar */}
       <div className="mb-4">
@@ -119,6 +269,44 @@ export default function QuizList() {
           </h6>
         </div>
 
+        {/* Empty State */}
+        {filteredQuizzes.length === 0 && (
+          <div className="text-center py-4 text-muted">
+            <FaRocket size={32} className="mb-2 opacity-50" />
+            {searchTerm ? (
+              <>
+                <p className="mb-2">No quizzes found matching "{searchTerm}"</p>
+                <button 
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setSearchTerm("")}
+                >
+                  Clear Search
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mb-2">
+                  {isFaculty 
+                    ? "No quizzes created yet" 
+                    : "No quizzes available yet"
+                  }
+                </p>
+                {isFaculty && (
+                  <button className="btn btn-primary btn-sm" onClick={handleAddQuiz}>
+                    <FaPlus className="me-1" size={12} />
+                    Create Your First Quiz
+                  </button>
+                )}
+                {isStudent && (
+                  <small className="text-muted">
+                    Check back later or contact your instructor
+                  </small>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* Quiz List */}
         <div className="list-group list-group-flush">
           {filteredQuizzes.map((quiz, index) => (
@@ -134,14 +322,60 @@ export default function QuizList() {
                 
                 <div className="flex-grow-1">
                   <div className="d-flex justify-content-between align-items-start mb-1">
-                    <Link 
-                      to={`/Kambaz/Quizzes/${quiz._id}`}
-                      className="text-decoration-none text-primary fw-semibold"
-                      style={{ fontSize: '15px' }}
-                    >
-                      {quiz.title}
-                    </Link>
-                    <BsThreeDotsVertical className="text-muted" style={{ cursor: 'pointer' }} size={14} />
+                    <div className="d-flex align-items-center">
+                      {/* Publish Status Icon - Faculty Only */}
+                      {isFaculty && (
+                        <button
+                          className="btn btn-link p-0 me-2"
+                          onClick={() => handlePublishToggle(quiz._id)}
+                          title={quiz.published ? 'Published - Click to unpublish' : 'Unpublished - Click to publish'}
+                        >
+                          {quiz.published ? '✅' : '🚫'}
+                        </button>
+                      )}
+                      
+                      {/* Quiz Title - Different actions for Faculty vs Student */}
+                      {isFaculty ? (
+                        <a 
+                          href={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`}
+                          className="text-decoration-none text-primary fw-semibold"
+                          style={{ fontSize: '15px' }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`);
+                          }}
+                        >
+                          {quiz.title}
+                        </a>
+                      ) : (
+                        <button
+                          className="btn btn-link p-0 text-primary fw-semibold text-decoration-none"
+                          style={{ fontSize: '15px' }}
+                          onClick={() => handleTakeQuiz(quiz._id)}
+                          disabled={!quiz.published || quiz.status === 'Closed'}
+                        >
+                          {quiz.title}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Context Menu - Faculty Only */}
+                    {isFaculty && (
+                      <div className="position-relative">
+                        <button
+                          className="btn btn-link p-0 text-muted"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowContextMenu(showContextMenu === quiz._id ? null : quiz._id);
+                          }}
+                        >
+                          <BsThreeDotsVertical size={14} />
+                        </button>
+                        {showContextMenu === quiz._id && (
+                          <ContextMenu quizId={quiz._id} quiz={quiz} />
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="text-muted" style={{ fontSize: '12px', lineHeight: '1.4' }}>
@@ -150,6 +384,21 @@ export default function QuizList() {
                     <span>Due {quiz.due} | </span>
                     <span>{quiz.points} pts | </span>
                     <span>{quiz.questions} Questions</span>
+                    
+                    {/* Show student's score if they're a student */}
+                    {isStudent && quiz.userScore !== undefined && (
+                      <span> | <strong>Score: {quiz.userScore}/{quiz.points}</strong></span>
+                    )}
+                    
+                    {/* Show publish status for faculty */}
+                    {isFaculty && !quiz.published && (
+                      <span> | <span className="text-warning">⚠️ Unpublished</span></span>
+                    )}
+                    
+                    {/* Show attempt info for students */}
+                    {isStudent && quiz.attempts && (
+                      <span> | Attempts: {quiz.attempts.used || 0}/{quiz.attempts.allowed || 1}</span>
+                    )}
                   </div>
                 </div>
               </div>
