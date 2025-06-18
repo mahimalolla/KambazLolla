@@ -155,24 +155,27 @@ export default function Dashboard() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  // Enrollment functions (new)
-  const handleEnroll = (courseId: string, courseName: string) => {
-    if (!currentUser) return;
-    
-    try {
-      setLoading(true);
-      db.enrollUserInCourse(currentUser._id, courseId);
-      loadUserData();
-      setMessage(`✅ Successfully enrolled in ${courseName}!`);
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
-      console.error("Error enrolling:", error);
-      setMessage(`❌ Failed to enroll in ${courseName}`);
-      setTimeout(() => setMessage(""), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleEnroll = (courseId: string, courseName: string) => {
+  if (!currentUser) return;
+  
+  if (!window.confirm(`Are you sure you want to enroll in "${courseName}"?`)) {
+    return;
+  }
+  
+  try {
+    setLoading(true);
+    db.enrollUserInCourse(currentUser._id, courseId);
+    loadUserData();
+    setMessage(`✅ Successfully enrolled in ${courseName}!`);
+    setTimeout(() => setMessage(""), 3000);
+  } catch (error) {
+    console.error("Error enrolling:", error);
+    setMessage(`❌ Failed to enroll in ${courseName}`);
+    setTimeout(() => setMessage(""), 3000);
+  } finally {
+    setLoading(false);
+  }
+};
 
 // COMPLETE FIX: Replace your entire handleUnenroll function with this:
 
