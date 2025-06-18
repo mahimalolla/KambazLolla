@@ -1,20 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../../AuthContext"; 
 import * as db from "../../Database";
 
 export default function Assignments() {
   const { cid } = useParams();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [assignments, setAssignments] = useState<any[]>([]); // Add state for assignments
+  const { state } = useAuth(); 
+  const [assignments, setAssignments] = useState<any[]>([]);
   
-  useEffect(() => {
-    const stored = localStorage.getItem('kambaz_user');
-    if (stored) {
-      const user = JSON.parse(stored);
-      setCurrentUser(user);
-    }
-  }, []);
-
   // Load assignments when component mounts or when course changes
   useEffect(() => {
     loadAssignments();
@@ -36,21 +29,15 @@ export default function Assignments() {
     
     if (confirmed) {
       try {
-        // Find the index of the assignment to delete
         const assignmentIndex = db.assignments.findIndex(
           (assignment: any) => assignment._id === assignmentId
         );
         
         if (assignmentIndex !== -1) {
-          // Remove the assignment from the database
           db.assignments.splice(assignmentIndex, 1);
-          
-          // Update local state to reflect the change
           setAssignments(prevAssignments => 
             prevAssignments.filter(assignment => assignment._id !== assignmentId)
           );
-          
-          // Show success message
           alert(`Assignment "${assignmentTitle}" has been deleted successfully!`);
         } else {
           alert('Error: Assignment not found!');
@@ -62,16 +49,20 @@ export default function Assignments() {
     }
   };
 
+  // Get current user from AuthContext
+  const currentUser = state.user;
+  
   // Role checks
   const isFaculty = currentUser?.role === "FACULTY";
   const isStudent = currentUser?.role === "STUDENT";
 
-  // Show loading if no user
-  if (!currentUser) {
+  // Show loading if not authenticated
+  if (!state.isAuthenticated || !currentUser) {
     return (
       <div className="container mt-4">
         <div className="alert alert-warning">
-          Please sign in to view assignments.
+          <h5>🔐 Authentication Required</h5>
+          <p className="mb-0">Please sign in to view assignments.</p>
         </div>
       </div>
     );
@@ -197,7 +188,7 @@ export default function Assignments() {
                       >
                         ✏️
                       </Link>
-                      {/* UPDATED: Delete button with actual functionality */}
+                      {/* Delete button with actual functionality */}
                       <button
                         className="btn btn-outline-danger btn-sm"
                         title="Delete Assignment"
