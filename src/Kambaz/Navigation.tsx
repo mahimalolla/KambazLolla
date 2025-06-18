@@ -19,7 +19,7 @@ export default function KambazNavigation() {
   const links = [
     { label: "Dashboard", path: "/Kambaz/Dashboard", icon: FaBook },
     { label: "Courses", path: "/Kambaz/Dashboard", icon: LiaBookSolid }, 
-    { label: "Enrollments", path: "/Kambaz/Enrollments", icon: FaUserGraduate }, // New Enrollments link
+    { label: "Enrollments", path: "/Kambaz/Enrollment", icon: FaUserGraduate }, // New Enrollments link
     { label: "Calendar", path: "/Kambaz/Calendar", icon: FaCalendarAlt },
     { label: "Inbox", path: "/Kambaz/Inbox", icon: FaClipboardList },
     { label: "Labs", path: "/Labs", icon: FaFlask },
