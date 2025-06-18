@@ -1,7 +1,11 @@
 import './index.css';
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 export default function Lab1() {
+  const [rating, setRating] = useState(4);
+  const [dateOfBirth, setDateOfBirth] = useState("2000-01-21");
+
   return (
     <div id="wd-lab1" className="container mt-5">
       <h1>Mahima Lolla</h1>
@@ -189,11 +193,23 @@ export default function Lab1() {
           <label htmlFor="wd-text-fields-salary-start">Starting Salary:</label>
           <input type="number" value="100000" placeholder="1000" id="wd-text-fields-salary-start" /><br />
           
-          <label htmlFor="wd-text-fields-rating">Rating:</label>
-          <input type="range" value="4" max="5" id="wd-text-fields-rating" /><br />
+          <label htmlFor="wd-text-fields-rating">Rating: {rating}/5</label>
+          <input 
+            type="range" 
+            value={rating} 
+            max="5" 
+            min="1"
+            id="wd-text-fields-rating"
+            onChange={(e) => setRating(parseInt(e.target.value))}
+          /><br />
           
           <label htmlFor="wd-text-fields-dob">Date of Birth:</label>
-          <input type="date" value="2000-01-21" id="wd-text-fields-dob" /><br />
+          <input 
+            type="date" 
+            value={dateOfBirth} 
+            id="wd-text-fields-dob"
+            onChange={(e) => setDateOfBirth(e.target.value)}
+          /><br />
 
           <button type="submit">Submit</button>
         </form>
