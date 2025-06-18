@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../AuthContext";
-import * as enrollmentClient from "./client"; // Your updated client functions
+import * as coursesClient from "../Courses/client";
+import * as userClient from "../Account/client";
 
 export default function EnhancedEnrollments() {
   const { state } = useAuth();
@@ -14,23 +15,26 @@ export default function EnhancedEnrollments() {
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [enrollmentStats, setEnrollmentStats] = useState<any>({});
 
-  // Fetch data from remote database using your client functions
+  // Fetch data from remote database using your existing client functions
   const fetchEnrollmentData = async () => {
     try {
       setLoading(true);
       
-      // Use your updated client functions
-      const [allCoursesData, enrolledCoursesData, availableCoursesData, statsData] = await Promise.all([
-        enrollmentClient.findAllCourses(),
-        state.user ? enrollmentClient.findMyCourses() : Promise.resolve([]),
-        state.user ? enrollmentClient.getAvailableCoursesForUser() : Promise.resolve([]),
-        state.user ? enrollmentClient.getUserEnrollmentStats() : Promise.resolve({})
+      // Use your existing client functions
+      const [allCoursesData, enrolledCoursesData] = await Promise.all([
+        coursesClient.findAllCourses(),
+        state.user ? userClient.findMyCourses() : Promise.resolve([])
       ]);
+      
+      // Filter available courses (not enrolled)
+      const availableCoursesData = allCoursesData.filter(course => 
+        !enrolledCoursesData.some(enrolled => enrolled._id === course._id)
+      );
       
       setAllCourses(allCoursesData || []);
       setEnrolledCourses(enrolledCoursesData || []);
       setAvailableCourses(availableCoursesData || []);
-      setEnrollmentStats(statsData || {});
+      setEnrollmentStats({}); // Basic stats for now
       
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
@@ -50,24 +54,8 @@ export default function EnhancedEnrollments() {
     try {
       setLoading(true);
       
-      // Check eligibility first
-      const eligibility = await enrollmentClient.validateEnrollmentEligibility(state.user._id, courseId);
-      if (!eligibility.eligible) {
-        setMessage(`❌ Cannot enroll: ${eligibility.reason}`);
-        setTimeout(() => setMessage(""), 3000);
-        return;
-      }
-      
-      // Check course availability
-      const availability = await enrollmentClient.checkCourseAvailability(courseId);
-      if (!availability.available) {
-        setMessage(`❌ Course not available: ${availability.reason}`);
-        setTimeout(() => setMessage(""), 3000);
-        return;
-      }
-      
-      // Enroll using your updated client function
-      await enrollmentClient.enrollInCourse(state.user._id, courseId);
+      // Enroll using your existing client function
+      await coursesClient.enrollInCourse(state.user._id, courseId);
       
       setMessage(`✅ Successfully enrolled in ${courseName}!`);
       
@@ -94,8 +82,8 @@ export default function EnhancedEnrollments() {
     try {
       setLoading(true);
       
-      // Unenroll using your updated client function
-      await enrollmentClient.unenrollFromCourse(state.user._id, courseId);
+      // Unenroll using your existing client function
+      await coursesClient.unenrollFromCourse(state.user._id, courseId);
       
       setMessage(`✅ Successfully dropped ${courseName}!`);
       
@@ -234,7 +222,7 @@ export default function EnhancedEnrollments() {
             }
           </p>
           
-          {/* Enhanced Stats */}
+          {/* Stats */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -248,7 +236,7 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>
-                {enrollmentStats.activeEnrollments || enrolledCourses.length}
+                {enrolledCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#1e40af' }}>
                 Active Enrollments
@@ -276,10 +264,10 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#92400e' }}>
-                {enrollmentStats.totalAssignmentsCompleted || 0}
+                {allCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#92400e' }}>
-                Assignments Completed
+                Total Courses
               </div>
             </div>
 
@@ -290,10 +278,10 @@ export default function EnhancedEnrollments() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#be185d' }}>
-                {allCourses.length}
+                {enrolledCourses.length + availableCourses.length}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#be185d' }}>
-                Total Courses
+                Course Catalog
               </div>
             </div>
           </div>
