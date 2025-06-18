@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAuth } from "../../AuthContext"; 
+import { useAuth } from "../../../AuthContext"; 
 import * as db from "../../Database";
 
 export default function Assignments() {
