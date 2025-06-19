@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaRocket, FaSearch, FaPlus, FaEdit, FaTrash, FaCopy } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { useAuth } from "../../AuthContext"; 
+import { useAuth } from "../../../AuthContext";
 
 const initialQuizzes = [
   { 
