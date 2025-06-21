@@ -22,16 +22,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // ADD THESE API FUNCTIONS DIRECTLY IN THE COMPONENT
-  const API_BASE = 'http://localhost:4000/api';
+  // FIXED: Dynamic API_BASE that works for both development and production
+  const API_BASE = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:4000/api' 
+    : 'https://kambaz-node.onrender.com/api';
 
   const getUserCoursesFromAPI = async (userId: string) => {
     try {
+      console.log(`Fetching courses for user ${userId} from ${API_BASE}`);
       const response = await fetch(`${API_BASE}/enrollments/user/${userId}/courses`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return await response.json();
+      const data = await response.json();
+      console.log('API Response:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching user courses:', error);
       throw error;
@@ -40,6 +45,7 @@ export default function Dashboard() {
 
   const enrollUserViaAPI = async (userId: string, courseId: string) => {
     try {
+      console.log(`Enrolling user ${userId} in course ${courseId}`);
       const response = await fetch(`${API_BASE}/enrollments`, {
         method: 'POST',
         headers: {
@@ -62,6 +68,7 @@ export default function Dashboard() {
 
   const unenrollUserViaAPI = async (userId: string, courseId: string) => {
     try {
+      console.log(`Unenrolling user ${userId} from course ${courseId}`);
       const response = await fetch(`${API_BASE}/enrollments/${userId}/${courseId}`, {
         method: 'DELETE',
       });
@@ -85,12 +92,13 @@ export default function Dashboard() {
     }
   }, [authState.user]);
 
-  // UPDATED: Load user data using API calls
+  // UPDATED: Load user data using API calls with better error handling
   const loadUserData = async () => {
     if (!authState.user) return;
     
     try {
       setLoading(true);
+      console.log('Loading user data...');
       
       // Get all courses from local database (for creating new courses)
       const allCoursesData = db.courses || [];
@@ -101,6 +109,7 @@ export default function Dashboard() {
       
       // Extract just the course details from the API response
       const userCourses = userCoursesFromAPI.map((enrollment: any) => enrollment.courseDetails).filter(Boolean);
+      console.log('User enrolled courses:', userCourses);
       setCourses(userCourses);
       
       // Filter available courses (not enrolled)
@@ -109,10 +118,27 @@ export default function Dashboard() {
       );
       setAvailableCourses(available);
       
+      // Clear any previous error messages
+      setMessage("");
+      
     } catch (error) {
       console.error("Error loading user data:", error);
-      setMessage("❌ Error loading course data");
-      setTimeout(() => setMessage(""), 3000);
+      setMessage(`❌ Error loading course data: ${error.message}`);
+      setTimeout(() => setMessage(""), 5000);
+      
+      // Fallback to local data if API fails
+      try {
+        const userCourses = db.getCoursesByUser(authState.user._id);
+        setCourses(userCourses);
+        const allCoursesData = db.courses || [];
+        setAllCourses(allCoursesData);
+        const available = allCoursesData.filter(course => 
+          !userCourses.some(enrolled => enrolled._id === course._id)
+        );
+        setAvailableCourses(available);
+      } catch (fallbackError) {
+        console.error("Fallback to local data also failed:", fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -293,7 +319,6 @@ export default function Dashboard() {
       minHeight: '100vh',
       backgroundColor: '#f8f9fa'
     }}>
-      {/* REST OF YOUR EXISTING JSX CODE STAYS THE SAME */}
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
@@ -367,6 +392,18 @@ export default function Dashboard() {
               Sign Out
             </button>
           </div>
+        </div>
+
+        {/* Debug Info - Remove this after testing */}
+        <div style={{
+          backgroundColor: '#f0f8ff',
+          border: '1px solid #b3d7ff',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '20px',
+          fontSize: '0.9rem'
+        }}>
+          <strong>Debug Info:</strong> Using API: {API_BASE} | User ID: {currentUser._id} | Enrolled: {courses.length} courses
         </div>
 
         {/* Stats Section */}
