@@ -22,6 +22,62 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // ADD THESE API FUNCTIONS DIRECTLY IN THE COMPONENT
+  const API_BASE = 'http://localhost:4000/api';
+
+  const getUserCoursesFromAPI = async (userId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/enrollments/user/${userId}/courses`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user courses:', error);
+      throw error;
+    }
+  };
+
+  const enrollUserViaAPI = async (userId: string, courseId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/enrollments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, courseId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error enrolling user:', error);
+      throw error;
+    }
+  };
+
+  const unenrollUserViaAPI = async (userId: string, courseId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/enrollments/${userId}/${courseId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error unenrolling user:', error);
+      throw error;
+    }
+  };
+
   // Load courses and enrollment data
   useEffect(() => {
     if (authState.user) {
@@ -29,25 +85,36 @@ export default function Dashboard() {
     }
   }, [authState.user]);
 
-  const loadUserData = () => {
+  // UPDATED: Load user data using API calls
+  const loadUserData = async () => {
     if (!authState.user) return;
     
     try {
-      // Get user's enrolled courses
-      const userCourses = db.getCoursesByUser(authState.user._id);
-      setCourses(userCourses);
+      setLoading(true);
       
-      // Get all courses for enrollment
+      // Get all courses from local database (for creating new courses)
       const allCoursesData = db.courses || [];
       setAllCourses(allCoursesData);
+      
+      // Get user's enrolled courses from API
+      const userCoursesFromAPI = await getUserCoursesFromAPI(authState.user._id);
+      
+      // Extract just the course details from the API response
+      const userCourses = userCoursesFromAPI.map((enrollment: any) => enrollment.courseDetails).filter(Boolean);
+      setCourses(userCourses);
       
       // Filter available courses (not enrolled)
       const available = allCoursesData.filter(course => 
         !userCourses.some(enrolled => enrolled._id === course._id)
       );
       setAvailableCourses(available);
+      
     } catch (error) {
       console.error("Error loading user data:", error);
+      setMessage("❌ Error loading course data");
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,79 +222,55 @@ export default function Dashboard() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-const handleEnroll = (courseId: string, courseName: string) => {
-  if (!currentUser) return;
-  
-  if (!window.confirm(`Are you sure you want to enroll in "${courseName}"?`)) {
-    return;
-  }
-  
-  try {
-    setLoading(true);
-    db.enrollUserInCourse(currentUser._id, courseId);
-    loadUserData();
-    setMessage(`✅ Successfully enrolled in ${courseName}!`);
-    setTimeout(() => setMessage(""), 3000);
-  } catch (error) {
-    console.error("Error enrolling:", error);
-    setMessage(`❌ Failed to enroll in ${courseName}`);
-    setTimeout(() => setMessage(""), 3000);
-  } finally {
-    setLoading(false);
-  }
-};
-
-// COMPLETE FIX: Replace your entire handleUnenroll function with this:
-
-const handleUnenroll = (courseId: string, courseName: string) => {
-  if (!currentUser) {
-    setMessage("❌ User not authenticated");
-    setTimeout(() => setMessage(""), 3000);
-    return;
-  }
-  
-  if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
-    return;
-  }
-  
-  try {
-    setLoading(true);
+  // UPDATED: Use API for enrollment
+  const handleEnroll = async (courseId: string, courseName: string) => {
+    if (!currentUser) return;
     
-    // Check if unenrollUserFromCourse function exists in db
-    if (typeof db.unenrollUserFromCourse === 'function') {
-      // Use the proper unenroll function
-      db.unenrollUserFromCourse(currentUser._id, courseId);
-    } else {
-      // Fallback: manually filter enrollments if function doesn't exist
-      console.warn("unenrollUserFromCourse function not found, attempting manual removal");
-      
-      // You'll need to access your enrollments array - adjust this based on your Database.ts structure
-      // This is a temporary workaround
-      const enrollmentIndex = db.enrollments?.findIndex(enrollment => 
-        enrollment.user === currentUser._id && enrollment.course === courseId
-      );
-      
-      if (enrollmentIndex !== -1 && enrollmentIndex !== undefined) {
-        db.enrollments.splice(enrollmentIndex, 1);
-      } else {
-        throw new Error("Enrollment not found");
-      }
+    if (!window.confirm(`Are you sure you want to enroll in "${courseName}"?`)) {
+      return;
     }
     
-    // Reload user data to reflect the changes
-    loadUserData();
+    try {
+      setLoading(true);
+      await enrollUserViaAPI(currentUser._id, courseId);
+      await loadUserData(); // Reload data from API
+      setMessage(`✅ Successfully enrolled in ${courseName}!`);
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      console.error("Error enrolling:", error);
+      setMessage(`❌ Failed to enroll in ${courseName}: ${error.message}`);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // UPDATED: Use API for unenrollment
+  const handleUnenroll = async (courseId: string, courseName: string) => {
+    if (!currentUser) {
+      setMessage("❌ User not authenticated");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
     
-    setMessage(`✅ Successfully dropped ${courseName}!`);
-    setTimeout(() => setMessage(""), 3000);
+    if (!window.confirm(`Are you sure you want to drop "${courseName}"?`)) {
+      return;
+    }
     
-  } catch (error) {
-    console.error("Error unenrolling:", error);
-    setMessage(`❌ Failed to drop ${courseName}: ${error.message || 'Unknown error'}`);
-    setTimeout(() => setMessage(""), 3000);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      await unenrollUserViaAPI(currentUser._id, courseId);
+      await loadUserData(); // Reload data from API
+      setMessage(`✅ Successfully dropped ${courseName}!`);
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      console.error("Error unenrolling:", error);
+      setMessage(`❌ Failed to drop ${courseName}: ${error.message}`);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter courses based on search
   const getFilteredCourses = (courseList: any[]) => {
@@ -250,6 +293,7 @@ const handleUnenroll = (courseId: string, courseName: string) => {
       minHeight: '100vh',
       backgroundColor: '#f8f9fa'
     }}>
+      {/* REST OF YOUR EXISTING JSX CODE STAYS THE SAME */}
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
