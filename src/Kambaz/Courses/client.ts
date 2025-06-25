@@ -297,6 +297,30 @@ export const findQuizzesForCourse = async (courseId: string) => {
   }
 };
 
+// ============ MODULE CLIENT FUNCTIONS (ADD THESE) ============
+
+// Update module
+export const updateModule = async (moduleId: string, moduleData: any) => {
+  try {
+    const { data } = await axiosWithCredentials.put(`${REMOTE_SERVER}/api/modules/${moduleId}`, moduleData);
+    return data;
+  } catch (error) {
+    console.error('Error updating module:', error);
+    throw new Error('Failed to update module.');
+  }
+};
+
+// Delete module
+export const deleteModule = async (moduleId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.delete(`${REMOTE_SERVER}/api/modules/${moduleId}`);
+    return data;
+  } catch (error) {
+    console.error('Error deleting module:', error);
+    throw new Error('Failed to delete module.');
+  }
+};
+
 // ============ DEFAULT EXPORT ============
 
 const courseClient = {
