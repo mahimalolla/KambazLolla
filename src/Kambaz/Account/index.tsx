@@ -3,6 +3,7 @@ import { useAuth } from "../../AuthContext";
 import Signin from "./Signin";
 import Signup from "./Signup";
 import Profile from "./Profile";
+import Users from "./Users"; // Add this import
 
 export default function Account() {
   return (
@@ -16,6 +17,8 @@ export default function Account() {
         <Route path="Signin" element={<Signin />} />
         <Route path="Signup" element={<Signup />} />
         <Route path="Profile" element={<Profile />} />
+        <Route path="Users" element={<Users />} />          {/* Add this route */}
+        <Route path="Users/:uid" element={<Users />} />     {/* Add this route for user details */}
       </Routes>
     </div>
   );
@@ -168,6 +171,36 @@ function AccountLanding() {
               Manage Profile
             </Link>
 
+            {/* ADMIN-ONLY: Users Management Link */}
+            {state.user?.role === "ADMIN" && (
+              <Link
+                to="/Kambaz/Account/Users"
+                style={{
+                  textDecoration: 'none',
+                  color: '#f59e0b',
+                  fontSize: '1.2rem',
+                  fontWeight: '500',
+                  padding: '12px 24px',
+                  border: '2px solid #f59e0b',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease',
+                  display: 'inline-block'
+                }}
+                onMouseOver={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.backgroundColor = '#f59e0b';
+                  target.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.backgroundColor = 'transparent';
+                  target.style.color = '#f59e0b';
+                }}
+              >
+                👥 Manage Users
+              </Link>
+            )}
+
             <Link
               to="/Kambaz/Dashboard"
               style={{
@@ -234,6 +267,21 @@ function AccountLanding() {
                 Update your personal information and settings
               </p>
             </div>
+            
+            {state.user?.role === "ADMIN" && (
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#fef3c7',
+                borderRadius: '8px',
+                border: '1px solid #f59e0b'
+              }}>
+                <h4 style={{ color: '#d97706', marginBottom: '10px' }}>👥 User Management</h4>
+                <p style={{ color: '#d97706', fontSize: '0.9rem', margin: 0 }}>
+                  Manage all users, roles, and permissions in the system
+                </p>
+              </div>
+            )}
+            
             <div style={{
               padding: '20px',
               backgroundColor: '#f8f9fa',
