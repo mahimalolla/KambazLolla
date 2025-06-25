@@ -1,98 +1,187 @@
-import axios from "axios";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../AuthContext";
 
-const REMOTE_SERVER = process.env.REACT_APP_REMOTE_SERVER || "https://kambaz-node.onrender.com";
-const QUIZZES_API = `${REMOTE_SERVER}/api/courses`;
+export default function QuizList() {
+  const { state } = useAuth();
+  const { cid } = useParams();
+  const navigate = useNavigate();
+  
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-// ================================
-// QUIZ CRUD OPERATIONS
-// ================================
+  // Simple API test without import
+  const fetchQuizzes = async () => {
+    if (!cid) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Direct API call without client import for testing
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Fetched quizzes:", data);
+      setQuizzes(data);
+      
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+      setError('Failed to load quizzes');
+      setQuizzes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-export const findQuizzesByCourse = async (courseId: string) => {
-  const response = await axios.get(`${QUIZZES_API}/${courseId}/quizzes`);
-  return response.data;
-};
+  useEffect(() => {
+    console.log("QuizList useEffect triggered, courseId:", cid);
+    console.log("User:", state.user);
+    
+    if (state.isAuthenticated && state.user && cid) {
+      fetchQuizzes();
+    } else {
+      setLoading(false);
+    }
+  }, [cid, state.isAuthenticated, state.user]);
 
-export const findQuizById = async (courseId: string, quizId: string) => {
-  const response = await axios.get(`${QUIZZES_API}/${courseId}/quizzes/${quizId}`);
-  return response.data;
-};
-
-export const createQuiz = async (courseId: string, quiz: any) => {
-  const response = await axios.post(`${QUIZZES_API}/${courseId}/quizzes`, quiz);
-  return response.data;
-};
-
-export const updateQuiz = async (courseId: string, quizId: string, quiz: any) => {
-  const response = await axios.put(`${QUIZZES_API}/${courseId}/quizzes/${quizId}`, quiz);
-  return response.data;
-};
-
-export const deleteQuiz = async (courseId: string, quizId: string) => {
-  const response = await axios.delete(`${QUIZZES_API}/${courseId}/quizzes/${quizId}`);
-  return response.data;
-};
-
-export const publishQuiz = async (courseId: string, quizId: string, published: boolean) => {
-  const response = await axios.patch(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/publish`, {
-    published
-  });
-  return response.data;
-};
-
-// ================================
-// QUESTION OPERATIONS
-// ================================
-
-export const addQuestionToQuiz = async (courseId: string, quizId: string, question: any) => {
-  const response = await axios.post(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/questions`, question);
-  return response.data;
-};
-
-export const updateQuestion = async (courseId: string, quizId: string, questionId: string, question: any) => {
-  const response = await axios.put(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/questions/${questionId}`, question);
-  return response.data;
-};
-
-export const deleteQuestion = async (courseId: string, quizId: string, questionId: string) => {
-  const response = await axios.delete(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/questions/${questionId}`);
-  return response.data;
-};
-
-// ================================
-// QUIZ ATTEMPT OPERATIONS
-// ================================
-
-export const submitQuizAttempt = async (courseId: string, quizId: string, attempt: any) => {
-  const response = await axios.post(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/attempts`, attempt);
-  return response.data;
-};
-
-export const findAttemptsByQuizAndUser = async (courseId: string, quizId: string, userId: string) => {
-  const response = await axios.get(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/attempts/${userId}`);
-  return response.data;
-};
-
-export const findAllAttemptsByQuiz = async (courseId: string, quizId: string) => {
-  const response = await axios.get(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/attempts`);
-  return response.data;
-};
-
-export const getQuizStats = async (courseId: string, quizId: string) => {
-  const response = await axios.get(`${QUIZZES_API}/${courseId}/quizzes/${quizId}/stats`);
-  return response.data;
-};
-
-// ================================
-// HELPER FUNCTIONS
-// ================================
-
-// Test function to verify API connection
-export const testQuizAPI = async () => {
-  try {
-    const response = await axios.get(`${REMOTE_SERVER}/api/quizzes/test`);
-    return response.data;
-  } catch (error) {
-    console.error('Quiz API test failed:', error);
-    throw error;
+  if (state.isLoading) {
+    return <div className="p-4">Loading auth...</div>;
   }
-};
+
+  if (!state.isAuthenticated || !state.user) {
+    return (
+      <div className="p-4">
+        <h5>Access Denied</h5>
+        <p>You must be logged in to view quizzes.</p>
+        <button 
+          className="btn btn-primary"
+          onClick={() => navigate('/Kambaz/Account/Signin')}
+        >
+          Sign In
+        </button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading quizzes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isFaculty = state.user.role === 'FACULTY' || state.user.role === 'ADMIN';
+
+  // Simple create quiz function
+  const handleCreateQuiz = async () => {
+    if (!cid) return;
+    
+    try {
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'New Quiz',
+          description: '',
+          published: false
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const newQuiz = await response.json();
+      console.log("Created quiz:", newQuiz);
+      setQuizzes([...quizzes, newQuiz]);
+      
+      // Navigate to editor
+      navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
+      
+    } catch (error) {
+      console.error('Error creating quiz:', error);
+      alert('Failed to create quiz: ' + error);
+    }
+  };
+
+  return (
+    <div className="container-fluid px-4 py-3">
+      <div className="mb-3">
+        <h4>Quizzes {isFaculty ? '(Faculty View)' : '(Student View)'}</h4>
+        <p>Course ID: {cid}</p>
+        <p>User: {state.user.firstName} {state.user.lastName} ({state.user.role})</p>
+      </div>
+
+      {error && (
+        <div className="alert alert-danger d-flex justify-content-between align-items-center">
+          <span>{error}</span>
+          <button className="btn btn-outline-danger btn-sm" onClick={fetchQuizzes}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="bg-light rounded p-3">
+        <h6>Assignment Quizzes</h6>
+        
+        {quizzes.length === 0 ? (
+          <div className="text-center py-4">
+            <p>
+              {error ? 'Error loading quizzes' : 
+               isFaculty ? 'No quizzes created yet' : 'No quizzes available yet'}
+            </p>
+            {isFaculty && !error && (
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateQuiz}
+              >
+                + Create Quiz
+              </button>
+            )}
+          </div>
+        ) : (
+          <div>
+            {quizzes.map(quiz => (
+              <div key={quiz._id} className="border-bottom py-2">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6>{quiz.title}</h6>
+                    <small className="text-muted">
+                      {quiz.points || 0} pts | {quiz.questions?.length || 0} questions
+                      {quiz.published ? ' | Published' : ' | Unpublished'}
+                    </small>
+                  </div>
+                  {isFaculty && (
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/edit`)}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
