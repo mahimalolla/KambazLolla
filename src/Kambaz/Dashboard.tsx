@@ -27,6 +27,29 @@ export default function Dashboard() {
   console.log('Dashboard - User:', authState?.user);
   console.log('Dashboard - Is Authenticated:', authState?.isAuthenticated);
 
+  // Helper function to filter out null/invalid courses
+  const filterValidCourses = (courseArray: any[]) => {
+    if (!Array.isArray(courseArray)) {
+      console.warn('Invalid course array:', courseArray);
+      return [];
+    }
+    
+    const validCourses = courseArray.filter(course => {
+      if (!course) {
+        console.warn('Found null/undefined course in array');
+        return false;
+      }
+      if (!course._id) {
+        console.warn('Found course without _id:', course);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`Filtered ${courseArray.length} courses down to ${validCourses.length} valid courses`);
+    return validCourses;
+  };
+
   // Load courses and enrollment data
   useEffect(() => {
     if (authState.user) {
@@ -45,17 +68,29 @@ export default function Dashboard() {
       // Get all courses from MongoDB
       const allCoursesData = await courseClient.findAllCourses();
       console.log('All courses loaded:', allCoursesData);
-      setAllCourses(allCoursesData);
+      
+      // Filter out any invalid courses from all courses
+      const validAllCourses = filterValidCourses(allCoursesData);
+      setAllCourses(validAllCourses);
       
       // Get user's enrolled courses from MongoDB
-      const userCourses = await courseClient.findCoursesByUserId(authState.user._id);
-      console.log('User enrolled courses:', userCourses);
-      setCourses(userCourses);
+      console.log('Loading courses for user:', authState.user._id, 'Role:', authState.user.role);
+      const userCoursesRaw = await courseClient.findCoursesByUserId(authState.user._id);
+      console.log('Raw user enrolled courses:', userCoursesRaw);
       
-      // Filter available courses (not enrolled)
-      const available = allCoursesData.filter(course => 
-        !userCourses.some(enrolled => enrolled._id === course._id)
-      );
+      // Filter out any null/invalid courses from user's enrolled courses
+      const validUserCourses = filterValidCourses(userCoursesRaw);
+      console.log('Valid user enrolled courses:', validUserCourses);
+      setCourses(validUserCourses);
+      
+      // Filter available courses (not enrolled) - only from valid courses
+      const available = validAllCourses.filter(course => {
+        if (!course || !course._id) return false;
+        return !validUserCourses.some(enrolled => {
+          if (!enrolled || !enrolled._id) return false;
+          return enrolled._id === course._id;
+        });
+      });
       console.log('Available courses:', available);
       setAvailableCourses(available);
       
@@ -65,6 +100,11 @@ export default function Dashboard() {
       console.error("Error loading user data:", error);
       setMessage(`❌ Error loading course data: ${error.message}`);
       setTimeout(() => setMessage(""), 5000);
+      
+      // Reset to empty arrays on error
+      setCourses([]);
+      setAllCourses([]);
+      setAvailableCourses([]);
     } finally {
       setLoading(false);
     }
@@ -189,6 +229,12 @@ export default function Dashboard() {
 
   // Course deletion using MongoDB API
   const deleteCourse = async (courseId: string) => {
+    if (!courseId) {
+      setMessage("❌ Invalid course ID");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
+    
     try {
       setLoading(true);
       await courseClient.deleteCourse(courseId);
@@ -206,7 +252,11 @@ export default function Dashboard() {
 
   // Enrollment using MongoDB API
   const handleEnroll = async (courseId: string, courseName: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !courseId) {
+      setMessage("❌ Invalid user or course");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
     
     if (!window.confirm(`Are you sure you want to enroll in "${courseName}"?`)) {
       return;
@@ -229,8 +279,8 @@ export default function Dashboard() {
 
   // Unenrollment using MongoDB API
   const handleUnenroll = async (courseId: string, courseName: string) => {
-    if (!currentUser) {
-      setMessage("❌ User not authenticated");
+    if (!currentUser || !courseId) {
+      setMessage("❌ Invalid user or course");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
@@ -256,13 +306,15 @@ export default function Dashboard() {
 
   // Filter courses based on search
   const getFilteredCourses = (courseList: any[]) => {
+    if (!Array.isArray(courseList)) return [];
     if (!searchTerm) return courseList;
     
-    return courseList.filter(course =>
-      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    return courseList.filter(course => {
+      if (!course) return false;
+      return (course.name && course.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+             (course.number && course.number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+             (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
   };
 
   const filteredMyCourses = getFilteredCourses(courses);
@@ -653,124 +705,177 @@ export default function Dashboard() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '24px'
             }}>
-              {filteredMyCourses.map((courseItem: any) => (
-                <div key={courseItem._id} style={{
-                  backgroundColor: 'white',
-                  borderRadius: '16px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s ease',
-                  cursor: 'pointer',
-                  border: isStudent ? '2px solid #48bb78' : '2px solid transparent',
-                  position: 'relative'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                >
-                  {isStudent && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      backgroundColor: '#48bb78',
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      zIndex: 1
-                    }}>
-                      ENROLLED
-                    </div>
-                  )}
-
-                  <Link 
-                    to={`/Kambaz/Courses/${courseItem._id}/Home`}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
+              {filteredMyCourses.map((courseItem: any) => {
+                // Additional safety check
+                if (!courseItem || !courseItem._id) {
+                  console.warn('Skipping invalid course item:', courseItem);
+                  return null;
+                }
+                
+                return (
+                  <div key={courseItem._id} style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s ease',
+                    cursor: 'pointer',
+                    border: isStudent ? '2px solid #48bb78' : '2px solid transparent',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                   >
-                    <img 
-                      src={courseItem.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"} 
-                      style={{ 
-                        width: '100%',
-                        height: '160px', 
-                        objectFit: 'cover' 
-                      }}
-                      alt={courseItem.name}
-                    />
-                    <div style={{ padding: '20px' }}>
-                      <h5 style={{
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        color: '#1a202c',
-                        marginBottom: '8px'
-                      }}>
-                        {courseItem.name}
-                      </h5>
-                      <p style={{
-                        color: '#6b7280',
-                        fontSize: '0.9rem',
-                        marginBottom: '8px',
-                        fontWeight: '500'
-                      }}>
-                        {courseItem.number} • {courseItem.credits} credits
-                      </p>
-                      <p style={{
-                        color: '#6b7280',
-                        fontSize: '0.9rem',
-                        marginBottom: '16px',
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical'
-                      }}>
-                        {courseItem.description || 'No description available'}
-                      </p>
-                      
+                    {isStudent && (
                       <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        backgroundColor: '#48bb78',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        zIndex: 1
                       }}>
-                        <span style={{
-                          background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                          color: 'white',
-                          padding: '6px 16px',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem',
+                        ENROLLED
+                      </div>
+                    )}
+
+                    <Link 
+                      to={`/Kambaz/Courses/${courseItem._id}/Home`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <img 
+                        src={courseItem.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"} 
+                        style={{ 
+                          width: '100%',
+                          height: '160px', 
+                          objectFit: 'cover' 
+                        }}
+                        alt={courseItem.name}
+                      />
+                      <div style={{ padding: '20px' }}>
+                        <h5 style={{
+                          fontSize: '1.1rem',
+                          fontWeight: '600',
+                          color: '#1a202c',
+                          marginBottom: '8px'
+                        }}>
+                          {courseItem.name || 'Unnamed Course'}
+                        </h5>
+                        <p style={{
+                          color: '#6b7280',
+                          fontSize: '0.9rem',
+                          marginBottom: '8px',
                           fontWeight: '500'
                         }}>
-                          Enter Course
-                        </span>
+                          {courseItem.number || 'No Number'} • {courseItem.credits || 4} credits
+                        </p>
+                        <p style={{
+                          color: '#6b7280',
+                          fontSize: '0.9rem',
+                          marginBottom: '16px',
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
+                          {courseItem.description || 'No description available'}
+                        </p>
                         
-                        <small style={{ color: '#9ca3af' }}>
-                          {isFaculty ? "👨‍🏫" : "👨‍🎓"}
-                        </small>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span style={{
+                            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                            color: 'white',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: '500'
+                          }}>
+                            Enter Course
+                          </span>
+                          
+                          <small style={{ color: '#9ca3af' }}>
+                            {isFaculty ? "👨‍🏫" : "👨‍🎓"}
+                          </small>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
 
-                  {/* Controls */}
-                  <div style={{
-                    borderTop: '1px solid #e5e7eb',
-                    padding: '16px 20px',
-                    display: 'flex',
-                    gap: '12px'
-                  }}>
-                    {isFaculty ? (
-                      <>
-                        <button 
+                    {/* Controls */}
+                    <div style={{
+                      borderTop: '1px solid #e5e7eb',
+                      padding: '16px 20px',
+                      display: 'flex',
+                      gap: '12px'
+                    }}>
+                      {isFaculty ? (
+                        <>
+                          <button 
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setCourse(courseItem);
+                            }}
+                            disabled={loading}
+                            style={{
+                              flex: 1,
+                              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '8px 16px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              opacity: loading ? 0.6 : 1
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button 
+                            onClick={(event) => {
+                              event.preventDefault();
+                              if (window.confirm(`Delete course "${courseItem.name}"?`)) {
+                                deleteCourse(courseItem._id);
+                              }
+                            }}
+                            disabled={loading}
+                            style={{
+                              flex: 1,
+                              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '8px 16px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              opacity: loading ? 0.6 : 1
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </>
+                      ) : (
+                        <button
                           onClick={(event) => {
                             event.preventDefault();
-                            setCourse(courseItem);
+                            handleUnenroll(courseItem._id, courseItem.name);
                           }}
                           disabled={loading}
                           style={{
                             flex: 1,
-                            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                            backgroundColor: '#e53e3e',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -781,58 +886,13 @@ export default function Dashboard() {
                             opacity: loading ? 0.6 : 1
                           }}
                         >
-                          ✏️ Edit
+                          {loading ? 'Processing...' : '❌ Drop Course'}
                         </button>
-                        <button 
-                          onClick={(event) => {
-                            event.preventDefault();
-                            if (window.confirm(`Delete course "${courseItem.name}"?`)) {
-                              deleteCourse(courseItem._id);
-                            }
-                          }}
-                          disabled={loading}
-                          style={{
-                            flex: 1,
-                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            padding: '8px 16px',
-                            fontSize: '0.8rem',
-                            fontWeight: '500',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.6 : 1
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={(event) => {
-                          event.preventDefault();
-                          handleUnenroll(courseItem._id, courseItem.name);
-                        }}
-                        disabled={loading}
-                        style={{
-                          flex: 1,
-                          backgroundColor: '#e53e3e',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '8px 16px',
-                          fontSize: '0.8rem',
-                          fontWeight: '500',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          opacity: loading ? 0.6 : 1
-                        }}
-                      >
-                        {loading ? 'Processing...' : '❌ Drop Course'}
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* No Courses Message */}
@@ -905,129 +965,137 @@ export default function Dashboard() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '24px'
             }}>
-              {filteredAvailableCourses.map((courseItem: any) => (
-                <div key={courseItem._id} style={{
-                  backgroundColor: 'white',
-                  borderRadius: '16px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s ease',
-                  border: '2px solid #e2e8f0'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                >
-                  <img 
-                    src={courseItem.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"} 
-                    style={{ 
-                      width: '100%',
-                      height: '160px', 
-                      objectFit: 'cover' 
-                    }}
-                    alt={courseItem.name}
-                  />
-                  <div style={{ padding: '20px' }}>
-                    <h5 style={{
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      color: '#1a202c',
-                      marginBottom: '8px'
-                    }}>
-                      {courseItem.name}
-                    </h5>
-                    <p style={{
-                      color: '#6b7280',
-                      fontSize: '0.9rem',
-                      marginBottom: '8px',
-                      fontWeight: '500'
-                    }}>
-                      {courseItem.number} • {courseItem.credits || 4} credits
-                    </p>
-                    <p style={{
-                      color: '#6b7280',
-                      fontSize: '0.9rem',
-                      marginBottom: '16px',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {courseItem.description || 'No description available'}
-                    </p>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '16px'
-                    }}>
-                      <span style={{
-                        fontSize: '0.8rem',
-                        color: '#718096'
+              {filteredAvailableCourses.map((courseItem: any) => {
+                // Additional safety check
+                if (!courseItem || !courseItem._id) {
+                  console.warn('Skipping invalid course item:', courseItem);
+                  return null;
+                }
+                
+                return (
+                  <div key={courseItem._id} style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s ease',
+                    border: '2px solid #e2e8f0'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  >
+                    <img 
+                      src={courseItem.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"} 
+                      style={{ 
+                        width: '100%',
+                        height: '160px', 
+                        objectFit: 'cover' 
+                      }}
+                      alt={courseItem.name}
+                    />
+                    <div style={{ padding: '20px' }}>
+                      <h5 style={{
+                        fontSize: '1.1rem',
+                        fontWeight: '600',
+                        color: '#1a202c',
+                        marginBottom: '8px'
                       }}>
-                        Department: {courseItem.department || 'N/A'}
-                      </span>
-                      
-                      <span style={{
-                        backgroundColor: '#f3f4f6',
-                        color: '#374151',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
+                        {courseItem.name || 'Unnamed Course'}
+                      </h5>
+                      <p style={{
+                        color: '#6b7280',
+                        fontSize: '0.9rem',
+                        marginBottom: '8px',
                         fontWeight: '500'
                       }}>
-                        {isFaculty ? 'View Only' : 'Available'}
-                      </span>
+                        {courseItem.number || 'No Number'} • {courseItem.credits || 4} credits
+                      </p>
+                      <p style={{
+                        color: '#6b7280',
+                        fontSize: '0.9rem',
+                        marginBottom: '16px',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {courseItem.description || 'No description available'}
+                      </p>
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '16px'
+                      }}>
+                        <span style={{
+                          fontSize: '0.8rem',
+                          color: '#718096'
+                        }}>
+                          Department: {courseItem.department || 'N/A'}
+                        </span>
+                        
+                        <span style={{
+                          backgroundColor: '#f3f4f6',
+                          color: '#374151',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.75rem',
+                          fontWeight: '500'
+                        }}>
+                          {isFaculty ? 'View Only' : 'Available'}
+                        </span>
+                      </div>
+
+                      {!isFaculty && (
+                        <button
+                          onClick={() => handleEnroll(courseItem._id, courseItem.name)}
+                          disabled={loading}
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#4299e1',
+                            color: 'white',
+                            border: 'none',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: '500',
+                            opacity: loading ? 0.6 : 1
+                          }}
+                        >
+                          {loading ? 'Processing...' : '➕ Enroll Now'}
+                        </button>
+                      )}
+
+                      {isFaculty && (
+                        <button
+                          onClick={() => setCourse(courseItem)}
+                          disabled={loading}
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#f59e0b',
+                            color: 'white',
+                            border: 'none',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: '500',
+                            opacity: loading ? 0.6 : 1
+                          }}
+                        >
+                          ✏️ Edit Course
+                        </button>
+                      )}
                     </div>
-
-                    {!isFaculty && (
-                      <button
-                        onClick={() => handleEnroll(courseItem._id, courseItem.name)}
-                        disabled={loading}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#4299e1',
-                          color: 'white',
-                          border: 'none',
-                          padding: '12px',
-                          borderRadius: '8px',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          fontSize: '0.9rem',
-                          fontWeight: '500',
-                          opacity: loading ? 0.6 : 1
-                        }}
-                      >
-                        {loading ? 'Processing...' : '➕ Enroll Now'}
-                      </button>
-                    )}
-
-                    {isFaculty && (
-                      <button
-                        onClick={() => setCourse(courseItem)}
-                        disabled={loading}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#f59e0b',
-                          color: 'white',
-                          border: 'none',
-                          padding: '12px',
-                          borderRadius: '8px',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          fontSize: '0.9rem',
-                          fontWeight: '500',
-                          opacity: loading ? 0.6 : 1
-                        }}
-                      >
-                        ✏️ Edit Course
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* No Available Courses Message */}
