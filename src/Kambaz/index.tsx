@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import KambazNavigation from "./Navigation";
 import Dashboard from "./Dashboard";
 import Courses from "./Courses";
@@ -12,17 +13,33 @@ import * as courseClient from "./Courses/client";
 export default function Kambaz() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Get current user from Redux store
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
 
   // Load courses from MongoDB on component mount
   useEffect(() => {
-    loadCourses();
-  }, []);
+    if (currentUser) {
+      loadCourses();
+    }
+  }, [currentUser]);
 
   const loadCourses = async () => {
     try {
       setLoading(true);
-      const coursesData = await courseClient.findAllCourses();
+      let coursesData;
+      
+      // Load different courses based on user role
+      if (currentUser?.role === 'ADMIN' || currentUser?.role === 'FACULTY') {
+        // Admin and Faculty can see all courses
+        coursesData = await courseClient.findAllCourses();
+      } else {
+        // Students only see courses they're enrolled in
+        coursesData = await courseClient.findMyCourses();
+      }
+      
       setCourses(coursesData);
+      console.log(`Loaded ${coursesData.length} courses for ${currentUser?.role}:`, coursesData);
     } catch (error) {
       console.error('Error loading courses:', error);
       setCourses([]); // Fallback to empty array
@@ -72,7 +89,8 @@ export default function Kambaz() {
     }
   };
 
-  if (loading) {
+  // Show loading only if we don't have a current user yet
+  if (loading || !currentUser) {
     return (
       <div id="wd-kambaz">
         <KambazNavigation />
@@ -92,7 +110,7 @@ export default function Kambaz() {
             }}>
               <h4 style={{ color: '#4f46e5', marginBottom: '16px' }}>Loading Kambaz...</h4>
               <p style={{ color: '#6b7280', margin: 0 }}>
-                Connecting to MongoDB and loading course data...
+                {!currentUser ? 'Authenticating user...' : 'Loading course data...'}
               </p>
             </div>
           </div>
@@ -108,7 +126,16 @@ export default function Kambaz() {
         <Routes>
           <Route path="/" element={<Navigate to="Account" />} />
           <Route path="Account/*" element={<Account />} />
-          <Route path="Dashboard" element={<Dashboard />} />
+          <Route 
+            path="Dashboard" 
+            element={
+              <Dashboard 
+                courses={courses} 
+                currentUser={currentUser}
+                onCoursesChange={loadCourses}
+              />
+            } 
+          />
           <Route
             path="Courses/:cid/*"
             element={<Courses courses={courses} />}
