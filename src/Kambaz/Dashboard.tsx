@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import * as courseClient from "./Courses/client";
+import courseClient from "./Courses/client";
 
 export default function Dashboard() {
   const { state: authState, logout } = useAuth(); 
@@ -22,6 +22,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Debug logging
+  console.log('Dashboard - Auth State:', authState);
+  console.log('Dashboard - User:', authState?.user);
+  console.log('Dashboard - Is Authenticated:', authState?.isAuthenticated);
+
   // Load courses and enrollment data
   useEffect(() => {
     if (authState.user) {
@@ -35,10 +40,11 @@ export default function Dashboard() {
     
     try {
       setLoading(true);
-      console.log('Loading user data from MongoDB...');
+      console.log('Loading user data from MongoDB...', authState.user._id);
       
       // Get all courses from MongoDB
       const allCoursesData = await courseClient.findAllCourses();
+      console.log('All courses loaded:', allCoursesData);
       setAllCourses(allCoursesData);
       
       // Get user's enrolled courses from MongoDB
@@ -50,11 +56,12 @@ export default function Dashboard() {
       const available = allCoursesData.filter(course => 
         !userCourses.some(enrolled => enrolled._id === course._id)
       );
+      console.log('Available courses:', available);
       setAvailableCourses(available);
       
       setMessage("");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading user data:", error);
       setMessage(`❌ Error loading course data: ${error.message}`);
       setTimeout(() => setMessage(""), 5000);
@@ -107,7 +114,7 @@ export default function Dashboard() {
   const isFaculty = currentUser.role === "FACULTY" || currentUser.role === "ADMIN";
   const isStudent = currentUser.role === "STUDENT";
 
-  // FIXED: Use MongoDB API for course creation
+  // Course creation using MongoDB API
   const addNewCourse = async () => {
     if (!course.name.trim()) {
       setMessage("❌ Please enter a course name");
@@ -148,7 +155,7 @@ export default function Dashboard() {
       setMessage("✅ Course created successfully!");
       setTimeout(() => setMessage(""), 3000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating course:', error);
       setMessage(`❌ Failed to create course: ${error.message}`);
       setTimeout(() => setMessage(""), 3000);
@@ -157,7 +164,7 @@ export default function Dashboard() {
     }
   };
 
-  // FIXED: Use MongoDB API for course updates
+  // Course update using MongoDB API
   const updateCourse = async () => {
     if (!course._id) {
       setMessage("❌ Please select a course to update");
@@ -171,7 +178,7 @@ export default function Dashboard() {
       await loadUserData();
       setMessage("✅ Course updated successfully!");
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating course:', error);
       setMessage(`❌ Failed to update course: ${error.message}`);
       setTimeout(() => setMessage(""), 3000);
@@ -180,7 +187,7 @@ export default function Dashboard() {
     }
   };
 
-  // FIXED: Use MongoDB API for course deletion
+  // Course deletion using MongoDB API
   const deleteCourse = async (courseId: string) => {
     try {
       setLoading(true);
@@ -188,7 +195,7 @@ export default function Dashboard() {
       await loadUserData();
       setMessage("✅ Course deleted successfully!");
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting course:', error);
       setMessage(`❌ Failed to delete course: ${error.message}`);
       setTimeout(() => setMessage(""), 3000);
@@ -197,7 +204,7 @@ export default function Dashboard() {
     }
   };
 
-  // FIXED: Use MongoDB API for enrollment
+  // Enrollment using MongoDB API
   const handleEnroll = async (courseId: string, courseName: string) => {
     if (!currentUser) return;
     
@@ -220,7 +227,7 @@ export default function Dashboard() {
     }
   };
 
-  // FIXED: Use MongoDB API for unenrollment
+  // Unenrollment using MongoDB API
   const handleUnenroll = async (courseId: string, courseName: string) => {
     if (!currentUser) {
       setMessage("❌ User not authenticated");
@@ -294,7 +301,7 @@ export default function Dashboard() {
               fontSize: '1.1rem',
               margin: 0
             }}>
-              Welcome back, {currentUser.firstName}!
+              Welcome back, {currentUser.firstName || currentUser.username}!
             </p>
           </div>
           
@@ -352,7 +359,9 @@ export default function Dashboard() {
           marginBottom: '20px',
           fontSize: '0.9rem'
         }}>
-          <strong>MongoDB Integration:</strong> User ID: {currentUser._id} | Enrolled: {courses.length} courses | Available: {availableCourses.length} courses
+          <strong>MongoDB Integration Status:</strong> User: {currentUser.username} ({currentUser._id}) | 
+          Role: {currentUser.role} | Enrolled: {courses.length} courses | Available: {availableCourses.length} courses |
+          Total System: {allCourses.length} courses
         </div>
 
         {/* Stats Section */}
@@ -388,7 +397,7 @@ export default function Dashboard() {
               {availableCourses.length}
             </div>
             <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-              {isFaculty ? 'Total Courses' : 'Available to Enroll'}
+              {isFaculty ? 'Other Courses' : 'Available to Enroll'}
             </div>
           </div>
           
@@ -424,6 +433,22 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Loading Indicator */}
+        {loading && (
+          <div style={{
+            backgroundColor: '#fffbeb',
+            border: '1px solid #f59e0b',
+            color: '#92400e',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            textAlign: 'center',
+            fontWeight: '500'
+          }}>
+            🔄 Loading...
+          </div>
+        )}
+
         {/* FACULTY-ONLY: Course Creation Section */}
         {isFaculty && (
           <div style={{
@@ -450,17 +475,17 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
                   onClick={updateCourse}
-                  disabled={loading}
+                  disabled={loading || !course._id}
                   style={{
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    background: course._id ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#9ca3af',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '10px 20px',
                     fontSize: '0.9rem',
                     fontWeight: '500',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.6 : 1
+                    cursor: (loading || !course._id) ? 'not-allowed' : 'pointer',
+                    opacity: (loading || !course._id) ? 0.6 : 1
                   }}
                 >
                   {loading ? 'Updating...' : 'Update Course'}
@@ -566,24 +591,22 @@ export default function Dashboard() {
               {isFaculty ? '👨‍🏫 My Courses' : '📚 My Enrollments'} ({courses.length})
             </button>
             
-            {isStudent && (
-              <button
-                onClick={() => setActiveSection("available")}
-                style={{
-                  flex: 1,
-                  padding: '16px',
-                  border: 'none',
-                  backgroundColor: activeSection === "available" ? '#4f46e5' : 'transparent',
-                  color: activeSection === "available" ? 'white' : '#6b7280',
-                  borderRadius: activeSection === "available" ? '16px 16px 0 0' : '0',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '1rem'
-                }}
-              >
-                ➕ Available to Enroll ({availableCourses.length})
-              </button>
-            )}
+            <button
+              onClick={() => setActiveSection("available")}
+              style={{
+                flex: 1,
+                padding: '16px',
+                border: 'none',
+                backgroundColor: activeSection === "available" ? '#4f46e5' : 'transparent',
+                color: activeSection === "available" ? 'white' : '#6b7280',
+                borderRadius: activeSection === "available" ? '16px 16px 0 0' : '0',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              {isFaculty ? '📊 All Courses' : '➕ Available to Enroll'} ({availableCourses.length})
+            </button>
           </div>
 
           {/* Search Bar */}
@@ -620,7 +643,7 @@ export default function Dashboard() {
                 color: '#1a202c',
                 margin: 0
               }}>
-                {isFaculty ? 'Published Courses' : 'My Enrolled Courses'} ({filteredMyCourses.length})
+                {isFaculty ? 'My Courses' : 'My Enrolled Courses'} ({filteredMyCourses.length})
               </h2>
             </div>
 
@@ -638,7 +661,8 @@ export default function Dashboard() {
                   overflow: 'hidden',
                   transition: 'transform 0.2s ease',
                   cursor: 'pointer',
-                  border: isStudent ? '2px solid #48bb78' : '2px solid transparent'
+                  border: isStudent ? '2px solid #48bb78' : '2px solid transparent',
+                  position: 'relative'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
@@ -689,13 +713,21 @@ export default function Dashboard() {
                       <p style={{
                         color: '#6b7280',
                         fontSize: '0.9rem',
+                        marginBottom: '8px',
+                        fontWeight: '500'
+                      }}>
+                        {courseItem.number} • {courseItem.credits} credits
+                      </p>
+                      <p style={{
+                        color: '#6b7280',
+                        fontSize: '0.9rem',
                         marginBottom: '16px',
                         overflow: 'hidden',
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical'
                       }}>
-                        {courseItem.description}
+                        {courseItem.description || 'No description available'}
                       </p>
                       
                       <div style={{
@@ -711,11 +743,11 @@ export default function Dashboard() {
                           fontSize: '0.8rem',
                           fontWeight: '500'
                         }}>
-                          Go
+                          Enter Course
                         </span>
                         
                         <small style={{ color: '#9ca3af' }}>
-                          {isFaculty ? "👨‍🏫 Faculty" : "👨‍🎓 Student"}
+                          {isFaculty ? "👨‍🏫" : "👨‍🎓"}
                         </small>
                       </div>
                     </div>
@@ -804,7 +836,7 @@ export default function Dashboard() {
             </div>
 
             {/* No Courses Message */}
-            {filteredMyCourses.length === 0 && (
+            {filteredMyCourses.length === 0 && !loading && (
               <div style={{
                 backgroundColor: '#dbeafe',
                 border: '1px solid #93c5fd',
@@ -848,8 +880,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Available Courses Section (Students Only) */}
-        {activeSection === "available" && isStudent && (
+        {/* Available Courses Section */}
+        {activeSection === "available" && (
           <div>
             <div style={{
               display: 'flex',
@@ -863,7 +895,7 @@ export default function Dashboard() {
                 color: '#1a202c',
                 margin: 0
               }}>
-                Available Courses ({filteredAvailableCourses.length})
+                {isFaculty ? 'All System Courses' : 'Available Courses'} ({filteredAvailableCourses.length})
               </h2>
             </div>
 
@@ -913,7 +945,7 @@ export default function Dashboard() {
                       marginBottom: '8px',
                       fontWeight: '500'
                     }}>
-                      {courseItem.number} • {courseItem.department}
+                      {courseItem.number} • {courseItem.credits || 4} credits
                     </p>
                     <p style={{
                       color: '#6b7280',
@@ -937,7 +969,7 @@ export default function Dashboard() {
                         fontSize: '0.8rem',
                         color: '#718096'
                       }}>
-                        Credits: {courseItem.credits || 'N/A'}
+                        Department: {courseItem.department || 'N/A'}
                       </span>
                       
                       <span style={{
@@ -948,35 +980,58 @@ export default function Dashboard() {
                         fontSize: '0.75rem',
                         fontWeight: '500'
                       }}>
-                        Available
+                        {isFaculty ? 'View Only' : 'Available'}
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => handleEnroll(courseItem._id, courseItem.name)}
-                      disabled={loading}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#4299e1',
-                        color: 'white',
-                        border: 'none',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        fontSize: '0.9rem',
-                        fontWeight: '500',
-                        opacity: loading ? 0.6 : 1
-                      }}
-                    >
-                      {loading ? 'Processing...' : '➕ Enroll Now'}
-                    </button>
+                    {!isFaculty && (
+                      <button
+                        onClick={() => handleEnroll(courseItem._id, courseItem.name)}
+                        disabled={loading}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#4299e1',
+                          color: 'white',
+                          border: 'none',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          cursor: loading ? 'not-allowed' : 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500',
+                          opacity: loading ? 0.6 : 1
+                        }}
+                      >
+                        {loading ? 'Processing...' : '➕ Enroll Now'}
+                      </button>
+                    )}
+
+                    {isFaculty && (
+                      <button
+                        onClick={() => setCourse(courseItem)}
+                        disabled={loading}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          cursor: loading ? 'not-allowed' : 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500',
+                          opacity: loading ? 0.6 : 1
+                        }}
+                      >
+                        ✏️ Edit Course
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
             {/* No Available Courses Message */}
-            {filteredAvailableCourses.length === 0 && (
+            {filteredAvailableCourses.length === 0 && !loading && (
               <div style={{
                 backgroundColor: '#dcfce7',
                 border: '1px solid #9ae6b4',
@@ -986,13 +1041,15 @@ export default function Dashboard() {
                 marginTop: '40px'
               }}>
                 <h5 style={{ color: '#166534', marginBottom: '12px' }}>
-                  {searchTerm ? 'No Matching Available Courses' : 'All Caught Up!'}
+                  {searchTerm ? 'No Matching Available Courses' : (isFaculty ? 'No Other Courses' : 'All Caught Up!')}
                 </h5>
                 <p style={{ color: '#166534', margin: 0 }}>
                   {searchTerm ? (
                     <>No available courses match your search criteria.</>
                   ) : (
-                    <>You're enrolled in all available courses, or there are no new courses to enroll in.</>
+                    isFaculty ? 
+                      <>You've created or are assigned to all available courses.</> :
+                      <>You're enrolled in all available courses, or there are no new courses to enroll in.</>
                   )}
                 </p>
                 {searchTerm && (
