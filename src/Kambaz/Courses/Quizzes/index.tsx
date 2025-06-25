@@ -1,60 +1,43 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom"; // 👈 ADD THESE IMPORTS
 import { FaRocket, FaSearch, FaPlus, FaEdit, FaTrash, FaCopy } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useAuth } from "../../../AuthContext";
-
-const initialQuizzes = [
-  { 
-    _id: "Q1", 
-    title: "Q1", 
-    due: "May 19 at 11:59pm", 
-    points: 29,
-    questions: 11,
-    status: "Closed",
-    published: true,
-    courseId: "course1"
-  },
-  { 
-    _id: "Q2", 
-    title: "Q2", 
-    due: "May 21 at 11:59pm", 
-    points: 23,
-    questions: 6,
-    status: "Closed",
-    published: true,
-    courseId: "course1"
-  },
-  { 
-    _id: "Q5", 
-    title: "Q5", 
-    availableUntil: "Jun 2 at 11:59pm",
-    due: "Jun 2 at 11:59pm", 
-    points: 31,
-    questions: 8,
-    status: "Available",
-    published: true,
-    courseId: "course1"
-  },
-  { 
-    _id: "Q6", 
-    title: "Q6 - Unpublished", 
-    availableUntil: "Jun 3 at 12am",
-    due: "Jun 9 at 11:59pm", 
-    points: 18,
-    questions: 3,
-    status: "Not available",
-    published: false,
-    courseId: "course1"
-  }
-];
+import * as quizClient from "./client"; // 👈 ADD THIS IMPORT
 
 export default function QuizList() {
-  const { state } = useAuth(); // Get auth state
-  const cid = "course1"; // Course ID - replace with useParams()
-  const navigate = (path: string) => console.log("Navigate to:", path); // Replace with useNavigate()
+  const { state } = useAuth();
+  const { cid } = useParams(); // 👈 GET REAL COURSE ID FROM URL
+  const navigate = useNavigate(); // 👈 REAL NAVIGATION
+  
   const [searchTerm, setSearchTerm] = useState("");
-  const [quizzes, setQuizzes] = useState(initialQuizzes);
+  const [quizzes, setQuizzes] = useState<any[]>([]); // 👈 START WITH EMPTY ARRAY
   const [showContextMenu, setShowContextMenu] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // 👈 ADD LOADING STATE
+  const [error, setError] = useState<string | null>(null); // 👈 ADD ERROR STATE
+
+  // 👈 ADD API FETCH FUNCTION
+  const fetchQuizzes = async () => {
+    if (!cid) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await quizClient.findQuizzesByCourse(cid);
+      setQuizzes(data);
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+      setError('Failed to load quizzes');
+      setQuizzes([]); // Fallback to empty array
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 👈 FETCH QUIZZES ON COMPONENT MOUNT
+  useEffect(() => {
+    fetchQuizzes();
+  }, [cid]);
 
   // Handle authentication loading state
   if (state.isLoading) {
@@ -64,7 +47,7 @@ export default function QuizList() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-2 text-muted">Loading quizzes...</p>
+          <p className="mt-2 text-muted">Loading...</p>
         </div>
       </div>
     );
@@ -77,9 +60,26 @@ export default function QuizList() {
         <div className="text-center py-5">
           <h5 className="text-danger">Access Denied</h5>
           <p className="text-muted">You must be logged in to view quizzes.</p>
-          <a href="/Kambaz/Account/Signin" className="btn btn-primary">
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/Kambaz/Account/Signin')}
+          >
             Sign In
-          </a>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state for quizzes
+  if (loading) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading quizzes...</p>
         </div>
       </div>
     );
@@ -88,9 +88,8 @@ export default function QuizList() {
   const isFaculty = state.user.role === 'FACULTY' || state.user.role === 'ADMIN';
   const isStudent = state.user.role === 'STUDENT';
 
-  // Filter quizzes based on course and search
+  // Filter quizzes based on search and role
   const filteredQuizzes = quizzes
-    .filter(quiz => quiz.courseId === cid)
     .filter(quiz => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .filter(quiz => {
       // Students only see published quizzes
@@ -111,34 +110,53 @@ export default function QuizList() {
     return "";
   };
 
-  const handleAddQuiz = () => {
-    const newQuiz = {
-      _id: `Q_${Date.now()}`,
-      title: `New Quiz ${filteredQuizzes.length + 1}`,
-      due: new Date().toLocaleDateString(),
-      points: 0,
-      questions: 0,
-      status: "Not available",
-      published: false,
-      courseId: cid
-    };
+  // 👈 UPDATE HANDLER FUNCTIONS TO USE API
+  const handleAddQuiz = async () => {
+    if (!cid) return;
     
-    setQuizzes([...quizzes, newQuiz]);
-    navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
+    try {
+      const newQuizData = {
+        title: `New Quiz`,
+        description: '',
+        published: false
+      };
+      
+      const newQuiz = await quizClient.createQuiz(cid, newQuizData);
+      setQuizzes([...quizzes, newQuiz]);
+      navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
+    } catch (error) {
+      console.error('Error creating quiz:', error);
+      alert('Failed to create quiz');
+    }
   };
 
-  const handlePublishToggle = (quizId: string) => {
-    setQuizzes(quizzes.map(quiz => 
-      quiz._id === quizId 
-        ? { ...quiz, published: !quiz.published }
-        : quiz
-    ));
+  const handlePublishToggle = async (quizId: string) => {
+    if (!cid) return;
+    
+    const quiz = quizzes.find(q => q._id === quizId);
+    if (!quiz) return;
+    
+    try {
+      const updatedQuiz = await quizClient.publishQuiz(cid, quizId, !quiz.published);
+      setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      alert('Failed to update quiz');
+    }
     setShowContextMenu(null);
   };
 
-  const handleDeleteQuiz = (quizId: string) => {
+  const handleDeleteQuiz = async (quizId: string) => {
+    if (!cid) return;
+    
     if (window.confirm('Are you sure you want to delete this quiz?')) {
-      setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
+      try {
+        await quizClient.deleteQuiz(cid, quizId);
+        setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
+      } catch (error) {
+        console.error('Error deleting quiz:', error);
+        alert('Failed to delete quiz');
+      }
     }
     setShowContextMenu(null);
   };
@@ -154,6 +172,11 @@ export default function QuizList() {
 
   const handlePreviewQuiz = (quizId: string) => {
     navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/preview`);
+    setShowContextMenu(null);
+  };
+
+  const handleQuizDetails = (quizId: string) => {
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}`);
   };
 
   // Close context menu when clicking outside
@@ -255,6 +278,16 @@ export default function QuizList() {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="alert alert-danger d-flex justify-content-between align-items-center">
+          <span>{error}</span>
+          <button className="btn btn-outline-danger btn-sm" onClick={fetchQuizzes}>
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Assignment Quizzes Section */}
       <div className="bg-light rounded p-3">
         <div className="d-flex align-items-center mb-3">
@@ -270,7 +303,7 @@ export default function QuizList() {
         </div>
 
         {/* Empty State */}
-        {filteredQuizzes.length === 0 && (
+        {filteredQuizzes.length === 0 && !error && (
           <div className="text-center py-4 text-muted">
             <FaRocket size={32} className="mb-2 opacity-50" />
             {searchTerm ? (
@@ -336,17 +369,13 @@ export default function QuizList() {
                       
                       {/* Quiz Title - Different actions for Faculty vs Student */}
                       {isFaculty ? (
-                        <a 
-                          href={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`}
-                          className="text-decoration-none text-primary fw-semibold"
+                        <button
+                          className="btn btn-link p-0 text-primary fw-semibold text-decoration-none"
                           style={{ fontSize: '15px' }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`);
-                          }}
+                          onClick={() => handleQuizDetails(quiz._id)}
                         >
                           {quiz.title}
-                        </a>
+                        </button>
                       ) : (
                         <button
                           className="btn btn-link p-0 text-primary fw-semibold text-decoration-none"
@@ -381,9 +410,9 @@ export default function QuizList() {
                   <div className="text-muted" style={{ fontSize: '12px', lineHeight: '1.4' }}>
                     <span className="fw-medium">{getStatusText(quiz)}</span>
                     {quiz.status !== "Closed" && getStatusText(quiz) && " | "}
-                    <span>Due {quiz.due} | </span>
-                    <span>{quiz.points} pts | </span>
-                    <span>{quiz.questions} Questions</span>
+                    {quiz.dueDate && <span>Due {new Date(quiz.dueDate).toLocaleDateString()} | </span>}
+                    <span>{quiz.points || 0} pts | </span>
+                    <span>{quiz.questions ? quiz.questions.length : 0} Questions</span>
                     
                     {/* Show student's score if they're a student */}
                     {isStudent && quiz.userScore !== undefined && (
