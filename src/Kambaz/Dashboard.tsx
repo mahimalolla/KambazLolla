@@ -34,64 +34,41 @@ export default function Dashboard() {
     }
   }, [authState.user]);
 
-// Replace the loadUserData function in your Dashboard with this version
-const loadUserData = async () => {
-  if (!authState.user) return;
-  
-  try {
-    setLoading(true);
-    console.log('🚀 Starting loadUserData for:', authState.user);
-    console.log('🔍 User details:', {
-      id: authState.user._id,
-      username: authState.user.username,
-      role: authState.user.role,
-      firstName: authState.user.firstName
-    });
+  // Load user data using MongoDB API
+  const loadUserData = async () => {
+    if (!authState.user) return;
     
-    // Step 1: Get all courses (this should work for everyone)
-    console.log('📚 Fetching all courses...');
-    const allCoursesData = await courseClient.findAllCourses();
-    console.log('✅ All courses loaded:', allCoursesData.length, 'courses');
-    setAllCourses(allCoursesData);
-    
-    // Step 2: Get user's enrolled courses (this might be failing for Alice)
-    console.log('🎓 Fetching user enrolled courses for ID:', authState.user._id);
     try {
+      setLoading(true);
+      console.log('Loading user data from MongoDB...', authState.user._id);
+      
+      // Get all courses from MongoDB
+      const allCoursesData = await courseClient.findAllCourses();
+      console.log('All courses loaded:', allCoursesData);
+      setAllCourses(allCoursesData);
+      
+      // Get user's enrolled courses from MongoDB
       const userCourses = await courseClient.findCoursesByUserId(authState.user._id);
-      console.log('✅ User enrolled courses loaded:', userCourses);
+      console.log('User enrolled courses:', userCourses);
       setCourses(userCourses);
       
-      // Step 3: Filter available courses
+      // Filter available courses (not enrolled)
       const available = allCoursesData.filter(course => 
         !userCourses.some(enrolled => enrolled._id === course._id)
       );
-      console.log('🔍 Available courses:', available.length, 'courses');
+      console.log('Available courses:', available);
       setAvailableCourses(available);
       
-    } catch (enrollmentError) {
-      console.error('❌ Failed to load user courses:', enrollmentError);
-      console.log('🔄 Falling back to empty enrolled courses array');
-      setCourses([]); // Fallback to empty array
-      setAvailableCourses(allCoursesData); // All courses are available
-      setMessage(`⚠️ Could not load your enrollments: ${enrollmentError.message}`);
+      setMessage("");
+      
+    } catch (error: any) {
+      console.error("Error loading user data:", error);
+      setMessage(`❌ Error loading course data: ${error.message}`);
+      setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setLoading(false);
     }
-    
-    setMessage("");
-    
-  } catch (error: any) {
-    console.error("❌ Critical error in loadUserData:", error);
-    console.error("Error details:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data
-    });
-    setMessage(`❌ Error loading course data: ${error.message}`);
-    setTimeout(() => setMessage(""), 5000);
-  } finally {
-    setLoading(false);
-    console.log('🏁 loadUserData completed');
-  }
-};
+  };
 
   // Show signin message if not authenticated
   if (!authState.isAuthenticated || !authState.user) {
@@ -291,31 +268,6 @@ const loadUserData = async () => {
   const filteredMyCourses = getFilteredCourses(courses);
   const filteredAvailableCourses = getFilteredCourses(availableCourses);
 
-  // Add this temporary function in your Dashboard component
-const testUserCoursesAPI = async () => {
-  console.log('🧪 Testing user courses API...');
-  try {
-    // Test the direct API call
-    const response = await fetch(`${import.meta.env.VITE_REMOTE_SERVER}/api/users/${authState.user._id}/courses`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    console.log('📡 API Response status:', response.status);
-    const data = await response.json();
-    console.log('📡 API Response data:', data);
-    
-    if (!response.ok) {
-      console.error('❌ API Error:', data);
-    }
-  } catch (error) {
-    console.error('❌ Network error:', error);
-  }
-};
-  
   return (
     <div style={{ 
       marginLeft: '240px',
@@ -1115,22 +1067,6 @@ const testUserCoursesAPI = async () => {
                   >
                     Clear Search
                   </button>
-
-                // Add this button temporarily in your render (after the debug info div)
-<button 
-  onClick={testUserCoursesAPI}
-  style={{
-    backgroundColor: '#6366f1',
-    color: 'white',
-    border: 'none',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    marginBottom: '20px',
-    cursor: 'pointer'
-  }}
->
-  🧪 Test User Courses API
-</button>
                 )}
               </div>
             )}
