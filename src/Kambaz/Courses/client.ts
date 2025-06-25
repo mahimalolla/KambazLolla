@@ -20,7 +20,6 @@ axiosWithCredentials.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
       console.warn('Unauthorized access - user may need to sign in');
     }
     return Promise.reject(error);
@@ -84,26 +83,61 @@ export const deleteCourse = async (courseId: string) => {
   }
 };
 
-// ============ USER FUNCTIONS ============
+// ============ MODULE FUNCTIONS ============
 
-// Get current user's profile
+// Get modules for a course
+export const findModulesForCourse = async (courseId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/modules`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching modules:', error);
+    return [];
+  }
+};
+
+// Create module for a course
+export const createModuleForCourse = async (courseId: string, moduleData: any) => {
+  try {
+    const { data } = await axiosWithCredentials.post(`${REMOTE_SERVER}/api/courses/${courseId}/modules`, moduleData);
+    return data;
+  } catch (error) {
+    console.error('Error creating module:', error);
+    throw new Error('Failed to create module.');
+  }
+};
+
+// Get users enrolled in a course
+export const findUsersForCourse = async (courseId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/users`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching course users:', error);
+    return [];
+  }
+};
+
+// ============ USER FUNCTIONS (FIXED ENDPOINTS) ============
+
+// Get current user's profile - FIXED: Your backend expects POST to /profile
 export const getCurrentUser = async () => {
   try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/profile`);
+    const { data } = await axiosWithCredentials.post(`${REMOTE_SERVER}/api/users/profile`);
     return data;
   } catch (error) {
     if (error.response?.status === 401) {
       return null; // User not authenticated
     }
     console.error('Error fetching current user:', error);
-    throw new Error('Failed to fetch user profile.');
+    return null;
   }
 };
 
-// Get user's enrolled courses
+// Get user's enrolled courses - FIXED: Updated to match your backend
 export const findMyCourses = async () => {
   try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/courses`);
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/current/courses`);
     return data || [];
   } catch (error) {
     if (error.response?.status === 401) {
@@ -114,7 +148,7 @@ export const findMyCourses = async () => {
   }
 };
 
-// Get courses by specific user ID (for admin/faculty)
+// Get courses by specific user ID (for admin/faculty) - FIXED
 export const findCoursesByUserId = async (userId: string) => {
   try {
     const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/${userId}/courses`);
@@ -125,9 +159,9 @@ export const findCoursesByUserId = async (userId: string) => {
   }
 };
 
-// ============ ENROLLMENT FUNCTIONS ============
+// ============ ENROLLMENT FUNCTIONS (FIXED) ============
 
-// Enroll in a course
+// Enroll in a course - FIXED: Updated to match your backend
 export const enrollInCourse = async (userId: string, courseId: string) => {
   try {
     const { data } = await axiosWithCredentials.post(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}`);
@@ -135,7 +169,6 @@ export const enrollInCourse = async (userId: string, courseId: string) => {
   } catch (error) {
     console.error('Error enrolling in course:', error);
     
-    // Handle specific error cases
     if (error.response?.status === 400) {
       throw new Error(error.response.data?.message || 'You may already be enrolled in this course.');
     } else if (error.response?.status === 404) {
@@ -148,7 +181,7 @@ export const enrollInCourse = async (userId: string, courseId: string) => {
   }
 };
 
-// Unenroll from a course  
+// Unenroll from a course - FIXED
 export const unenrollFromCourse = async (userId: string, courseId: string) => {
   try {
     const { data } = await axiosWithCredentials.delete(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}`);
@@ -156,7 +189,6 @@ export const unenrollFromCourse = async (userId: string, courseId: string) => {
   } catch (error) {
     console.error('Error unenrolling from course:', error);
     
-    // Handle specific error cases
     if (error.response?.status === 404) {
       throw new Error('Enrollment not found or already removed.');
     } else if (error.response?.status === 403) {
@@ -167,251 +199,137 @@ export const unenrollFromCourse = async (userId: string, courseId: string) => {
   }
 };
 
-// Check if user is enrolled in a specific course
+// ============ ENROLLMENT CLIENT (using your existing enrollment API) ============
+
+// Get all enrollments
+export const findAllEnrollments = async () => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/enrollments`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching enrollments:', error);
+    return [];
+  }
+};
+
+// Get enrollments for a user
+export const findEnrollmentsForUser = async (userId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/enrollments/user/${userId}`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user enrollments:', error);
+    return [];
+  }
+};
+
+// Get enrollments for a course
+export const findEnrollmentsForCourse = async (courseId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/enrollments/course/${courseId}`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching course enrollments:', error);
+    return [];
+  }
+};
+
+// Check enrollment status
 export const checkEnrollmentStatus = async (userId: string, courseId: string) => {
   try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}/status`);
-    return data.enrolled || false;
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/enrollments/check/${userId}/${courseId}`);
+    return data.isEnrolled || false;
   } catch (error) {
-    if (error.response?.status === 404) {
-      return false; // Not enrolled
-    }
     console.error('Error checking enrollment status:', error);
     return false;
   }
 };
 
-// Get enrollment details for a specific course
-export const getEnrollmentDetails = async (userId: string, courseId: string) => {
-  try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}/details`);
-    return data;
-  } catch (error) {
-    console.error('Error fetching enrollment details:', error);
-    return null;
-  }
-};
-
-// ============ STATISTICS FUNCTIONS ============
-
-// Get user's enrollment statistics
-export const getUserEnrollmentStats = async (userId?: string) => {
-  try {
-    const endpoint = userId 
-      ? `${REMOTE_SERVER}/api/users/${userId}/stats`
-      : `${REMOTE_SERVER}/api/users/stats`;
-    
-    const { data } = await axiosWithCredentials.get(endpoint);
-    return data;
-  } catch (error) {
-    console.error('Error fetching enrollment stats:', error);
-    return {
-      totalEnrollments: 0,
-      activeEnrollments: 0,
-      completedEnrollments: 0,
-      droppedEnrollments: 0,
-      totalAssignmentsCompleted: 0,
-      totalAssignmentsAvailable: 0
-    };
-  }
-};
-
-// Get course enrollment statistics (for faculty)
-export const getCourseEnrollmentStats = async (courseId: string) => {
-  try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/stats`);
-    return data;
-  } catch (error) {
-    console.error('Error fetching course stats:', error);
-    return {
-      totalStudents: 0,
-      activeStudents: 0,
-      averageProgress: 0
-    };
-  }
-};
-
-// ============ BULK OPERATIONS ============
-
-// Bulk enroll users in a course (Faculty/Admin only)
-export const bulkEnrollUsers = async (userIds: string[], courseId: string) => {
-  try {
-    const { data } = await axiosWithCredentials.post(`${REMOTE_SERVER}/api/courses/${courseId}/bulk-enroll`, {
-      userIds
-    });
-    return data;
-  } catch (error) {
-    console.error('Error bulk enrolling users:', error);
-    throw new Error('Failed to enroll users. Please check your permissions.');
-  }
-};
-
-// Get students enrolled in a course (Faculty only)
-export const getCourseStudents = async (courseId: string) => {
-  try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/students`);
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching course students:', error);
-    throw new Error('Failed to fetch course students.');
-  }
-};
-
-// ============ SEARCH & FILTER FUNCTIONS ============
-
-// Search courses by keyword
-export const searchCourses = async (keyword: string, filters?: any) => {
-  try {
-    const params = new URLSearchParams();
-    params.append('q', keyword);
-    
-    if (filters) {
-      Object.keys(filters).forEach(key => {
-        if (filters[key]) {
-          params.append(key, filters[key]);
-        }
-      });
-    }
-    
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/search?${params}`);
-    return data || [];
-  } catch (error) {
-    console.error('Error searching courses:', error);
-    return [];
-  }
-};
-
-// Get available courses for a user (courses they're not enrolled in)
-export const getAvailableCoursesForUser = async (userId?: string) => {
-  try {
-    const endpoint = userId 
-      ? `${REMOTE_SERVER}/api/users/${userId}/available-courses`
-      : `${REMOTE_SERVER}/api/users/available-courses`;
-    
-    const { data } = await axiosWithCredentials.get(endpoint);
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching available courses:', error);
-    return [];
-  }
-};
-
 // ============ UTILITY FUNCTIONS ============
 
-// Check if server is reachable
+// Check if server is reachable - FIXED: Use existing test endpoint
 export const checkServerHealth = async () => {
   try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/health`);
-    return data.status === 'ok';
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/test`);
+    return data.message === 'API is working!';
   } catch (error) {
     console.error('Server health check failed:', error);
     return false;
   }
 };
 
-// Export enrollment data (for reports)
-export const exportEnrollmentData = async (courseId?: string) => {
+// Get all users (for admin)
+export const findAllUsers = async () => {
   try {
-    const endpoint = courseId 
-      ? `${REMOTE_SERVER}/api/enrollments/export?courseId=${courseId}`
-      : `${REMOTE_SERVER}/api/enrollments/export`;
-    
-    const { data } = await axiosWithCredentials.get(endpoint);
-    return data;
-  } catch (error) {
-    console.error('Error exporting enrollment data:', error);
-    throw new Error('Failed to export enrollment data.');
-  }
-};
-
-// Get enrollment history for a user
-export const getEnrollmentHistory = async (userId?: string) => {
-  try {
-    const endpoint = userId 
-      ? `${REMOTE_SERVER}/api/users/${userId}/enrollment-history`
-      : `${REMOTE_SERVER}/api/users/enrollment-history`;
-    
-    const { data } = await axiosWithCredentials.get(endpoint);
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users`);
     return data || [];
   } catch (error) {
-    console.error('Error fetching enrollment history:', error);
+    console.error('Error fetching users:', error);
     return [];
   }
 };
 
-// Update enrollment progress/grade (Faculty only)
-export const updateEnrollmentProgress = async (userId: string, courseId: string, progressData: any) => {
+// ============ ASSIGNMENT FUNCTIONS ============
+
+// Get assignments for a course
+export const findAssignmentsForCourse = async (courseId: string) => {
   try {
-    const { data } = await axiosWithCredentials.put(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}/progress`, progressData);
-    return data;
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/assignments`);
+    return data || [];
   } catch (error) {
-    console.error('Error updating enrollment progress:', error);
-    throw new Error('Failed to update enrollment progress.');
+    console.error('Error fetching assignments:', error);
+    return [];
   }
 };
 
-// ============ VALIDATION FUNCTIONS ============
+// ============ QUIZ FUNCTIONS ============
 
-// Validate course enrollment eligibility
-export const validateEnrollmentEligibility = async (userId: string, courseId: string) => {
+// Get quizzes for a course
+export const findQuizzesForCourse = async (courseId: string) => {
   try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/${userId}/courses/${courseId}/eligibility`);
-    return data;
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/quizzes`);
+    return data || [];
   } catch (error) {
-    console.error('Error validating enrollment eligibility:', error);
-    return { eligible: false, reason: 'Unable to validate eligibility' };
+    console.error('Error fetching quizzes:', error);
+    return [];
   }
 };
 
-// Check course capacity and availability
-export const checkCourseAvailability = async (courseId: string) => {
-  try {
-    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/availability`);
-    return data;
-  } catch (error) {
-    console.error('Error checking course availability:', error);
-    return { available: false, reason: 'Unable to check availability' };
-  }
-};
+// ============ DEFAULT EXPORT ============
 
-// ============ DEFAULT EXPORT (OPTIONAL) ============
-
-const enrollmentClient = {
+const courseClient = {
   // Course functions
   findAllCourses,
   findCourseById,
   createCourse,
   updateCourse,
   deleteCourse,
-  searchCourses,
+  
+  // Module functions
+  findModulesForCourse,
+  createModuleForCourse,
+  findUsersForCourse,
   
   // User functions
   getCurrentUser,
   findMyCourses,
   findCoursesByUserId,
+  findAllUsers,
   
   // Enrollment functions
   enrollInCourse,
   unenrollFromCourse,
   checkEnrollmentStatus,
-  getEnrollmentDetails,
+  findAllEnrollments,
+  findEnrollmentsForUser,
+  findEnrollmentsForCourse,
   
-  // Statistics
-  getUserEnrollmentStats,
-  getCourseEnrollmentStats,
-  
-  // Bulk operations
-  bulkEnrollUsers,
-  getCourseStudents,
+  // Assignment and Quiz functions
+  findAssignmentsForCourse,
+  findQuizzesForCourse,
   
   // Utility functions
-  getAvailableCoursesForUser,
-  checkServerHealth,
-  exportEnrollmentData,
-  getEnrollmentHistory,
-  updateEnrollmentProgress,
-  validateEnrollmentEligibility,
-  checkCourseAvailability
+  checkServerHealth
 };
 
-export default enrollmentClient;
+export default courseClient;
