@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "../AuthContext"; 
 import KambazNavigation from "./Navigation";
 import Dashboard from "./Dashboard";
 import Courses from "./Courses";
@@ -12,18 +13,40 @@ import * as courseClient from "./Courses/client";
 export default function Kambaz() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Use AuthContext - note the correct structure
+  const { state } = useAuth();
+  const currentUser = state.user; // Get user from state
+  const isAuthenticated = state.isAuthenticated;
+  const authLoading = state.isLoading;
 
-  // Load courses from MongoDB on component mount
+  // Load courses when user changes
   useEffect(() => {
-    loadCourses();
-  }, []);
+    if (isAuthenticated && currentUser) {
+      loadCourses();
+    } else if (!authLoading) {
+      setLoading(false);
+    }
+  }, [currentUser, isAuthenticated, authLoading]);
 
   const loadCourses = async () => {
     try {
       setLoading(true);
-      console.log('Loading courses...');
-      const coursesData = await courseClient.findAllCourses();
-      console.log('Courses loaded:', coursesData);
+      let coursesData;
+      
+      console.log('Loading courses for user:', currentUser?.username, 'Role:', currentUser?.role);
+      
+      // Load different courses based on user role
+      if (currentUser?.role === 'ADMIN' || currentUser?.role === 'FACULTY') {
+        // Admin and Faculty can see all courses
+        coursesData = await courseClient.findAllCourses();
+        console.log('Loaded all courses for admin/faculty:', coursesData.length);
+      } else {
+        // Students only see courses they're enrolled in
+        coursesData = await courseClient.findMyCourses();
+        console.log('Loaded enrolled courses for student:', coursesData.length);
+      }
+      
       setCourses(coursesData);
     } catch (error) {
       console.error('Error loading courses:', error);
@@ -33,14 +56,69 @@ export default function Kambaz() {
     }
   };
 
-  if (loading) {
+  const addNewCourse = async (courseData: any) => {
+    try {
+      const newCourse = await courseClient.createCourse(courseData);
+      setCourses([...courses, newCourse]);
+      return newCourse;
+    } catch (error) {
+      console.error('Error creating course:', error);
+      throw error;
+    }
+  };
+
+  const deleteCourse = async (courseId: any) => {
+    try {
+      await courseClient.deleteCourse(courseId);
+      setCourses(courses.filter((course) => course._id !== courseId));
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      throw error;
+    }
+  };
+
+  const updateCourse = async (updatedCourse: any) => {
+    try {
+      await courseClient.updateCourse(updatedCourse._id, updatedCourse);
+      setCourses(
+        courses.map((c) => {
+          if (c._id === updatedCourse._id) {
+            return updatedCourse;
+          } else {
+            return c;
+          }
+        })
+      );
+    } catch (error) {
+      console.error('Error updating course:', error);
+      throw error;
+    }
+  };
+
+  // Show loading while auth is loading or courses are loading
+  if (authLoading || (isAuthenticated && loading)) {
     return (
       <div id="wd-kambaz">
         <KambazNavigation />
         <div className="wd-main-content-offset p-3">
-          <div className="text-center mt-5">
-            <h4>Loading Kambaz...</h4>
-            <p>Connecting to server and loading data...</p>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: '#4f46e5', marginBottom: '16px' }}>Loading Kambaz...</h4>
+              <p style={{ color: '#6b7280', margin: 0 }}>
+                {authLoading ? 'Checking authentication...' : 'Loading course data...'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -54,12 +132,19 @@ export default function Kambaz() {
         <Routes>
           <Route path="/" element={<Navigate to="Account" />} />
           <Route path="Account/*" element={<Account />} />
-          <Route path="Dashboard" element={
-            <Dashboard 
-              courses={courses}
-              onCoursesChange={loadCourses}
-            />
-          } />
+          <Route 
+            path="Dashboard" 
+            element={
+              <Dashboard 
+                courses={courses} 
+                currentUser={currentUser}
+                onCoursesChange={loadCourses}
+                addNewCourse={addNewCourse}
+                deleteCourse={deleteCourse}
+                updateCourse={updateCourse}
+              />
+            } 
+          />
           <Route
             path="Courses/:cid/*"
             element={<Courses courses={courses} />}
