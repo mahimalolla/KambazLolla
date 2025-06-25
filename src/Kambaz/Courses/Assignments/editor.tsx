@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../AuthContext"; 
-import * as db from "../../Database";
+import courseClient from "../client"; // Use course client instead of local db
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
   const navigate = useNavigate();
-  const { state } = useAuth(); // Use AuthContext instead of localStorage
+  const { state } = useAuth();
   
   // Determine if we're editing an existing assignment
   const isEditing = !!aid;
@@ -31,6 +31,8 @@ export default function AssignmentEditor() {
     until: ""
   });
 
+  const [loading, setLoading] = useState(false);
+
   // Check authentication and role on component mount
   useEffect(() => {
     if (!state.isAuthenticated || !state.user) {
@@ -49,37 +51,48 @@ export default function AssignmentEditor() {
 
   // Load existing assignment data if editing
   useEffect(() => {
-    if (isEditing && aid && state.user?.role === "FACULTY") {
-      console.log('Loading assignment with ID:', aid);
-      const existingAssignment = db.assignments.find(a => a._id === aid);
-      
-      if (existingAssignment) {
-        console.log('Found existing assignment:', existingAssignment);
-        setAssignment({
-          name: existingAssignment.title || "Untitled Assignment",
-          description: existingAssignment.description || "",
-          points: existingAssignment.points || 100,
-          group: existingAssignment.group || "ASSIGNMENTS",
-          gradeAs: existingAssignment.gradeAs || "Percentage",
-          submissionType: existingAssignment.submissionType || "Online",
-          onlineOptions: existingAssignment.onlineOptions || {
-            textEntry: false,
-            websiteUrl: true,
-            mediaRecordings: false,
-            studentAnnotation: false,
-            fileUploads: false
-          },
-          assignTo: existingAssignment.assignTo || "Everyone",
-          due: existingAssignment.dueDate || "",
-          availableFrom: existingAssignment.availableFrom || "",
-          until: existingAssignment.until || ""
-        });
-      } else {
-        console.warn('Assignment not found with ID:', aid);
-        alert('Assignment not found!');
-        navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    const loadAssignment = async () => {
+      if (isEditing && aid && state.user?.role === "FACULTY") {
+        try {
+          setLoading(true);
+          console.log('Loading assignment with ID:', aid);
+          
+          // Call API to get assignment from database
+          const existingAssignment = await courseClient.findAssignmentById(aid);
+          
+          if (existingAssignment) {
+            console.log('Found existing assignment:', existingAssignment);
+            setAssignment({
+              name: existingAssignment.title || "Untitled Assignment",
+              description: existingAssignment.description || "",
+              points: existingAssignment.points || 100,
+              group: existingAssignment.group || "ASSIGNMENTS",
+              gradeAs: existingAssignment.gradeAs || "Percentage",
+              submissionType: existingAssignment.submissionType || "Online",
+              onlineOptions: existingAssignment.onlineOptions || {
+                textEntry: false,
+                websiteUrl: true,
+                mediaRecordings: false,
+                studentAnnotation: false,
+                fileUploads: false
+              },
+              assignTo: existingAssignment.assignTo || "Everyone",
+              due: existingAssignment.dueDate || "",
+              availableFrom: existingAssignment.availableDate || existingAssignment.availableFrom || "",
+              until: existingAssignment.untilDate || existingAssignment.until || ""
+            });
+          }
+        } catch (error) {
+          console.error('Error loading assignment:', error);
+          alert('Assignment not found!');
+          navigate(`/Kambaz/Courses/${cid}/Assignments`);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    };
+
+    loadAssignment();
   }, [aid, isEditing, state.user, cid, navigate]);
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -99,35 +112,15 @@ export default function AssignmentEditor() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!cid) return;
+    
     try {
+      setLoading(true);
+      
       if (isEditing && aid) {
-        // Update existing assignment
-        const existingIndex = db.assignments.findIndex(a => a._id === aid);
-        if (existingIndex !== -1) {
-          db.assignments[existingIndex] = {
-            ...db.assignments[existingIndex],
-            title: assignment.name,
-            description: assignment.description,
-            points: assignment.points,
-            group: assignment.group,
-            gradeAs: assignment.gradeAs,
-            submissionType: assignment.submissionType,
-            onlineOptions: assignment.onlineOptions,
-            assignTo: assignment.assignTo,
-            dueDate: assignment.due,
-            availableFrom: assignment.availableFrom,
-            until: assignment.until
-          };
-          alert("Assignment updated successfully!");
-        } else {
-          alert("Error: Assignment not found!");
-          return;
-        }
-      } else {
-        // Create new assignment
-        const newAssignment = {
-          _id: `A${Date.now()}`,
+        // Update existing assignment using MongoDB API
+        const updateData = {
           title: assignment.name,
           description: assignment.description,
           points: assignment.points,
@@ -137,19 +130,40 @@ export default function AssignmentEditor() {
           onlineOptions: assignment.onlineOptions,
           assignTo: assignment.assignTo,
           dueDate: assignment.due,
-          availableFrom: assignment.availableFrom,
-          until: assignment.until,
-          course: cid
+          availableDate: assignment.availableFrom,
+          untilDate: assignment.until
         };
         
-        db.assignments.push(newAssignment);
+        await courseClient.updateAssignment(aid, updateData);
+        alert("Assignment updated successfully!");
+        
+      } else {
+        // Create new assignment using MongoDB API
+        const newAssignmentData = {
+          title: assignment.name,
+          description: assignment.description,
+          points: assignment.points,
+          group: assignment.group,
+          gradeAs: assignment.gradeAs,
+          submissionType: assignment.submissionType,
+          onlineOptions: assignment.onlineOptions,
+          assignTo: assignment.assignTo,
+          dueDate: assignment.due,
+          availableDate: assignment.availableFrom,
+          untilDate: assignment.until
+        };
+        
+        await courseClient.createAssignmentForCourse(cid, newAssignmentData);
         alert("Assignment created successfully!");
       }
       
       navigate(`/Kambaz/Courses/${cid}/Assignments`);
+      
     } catch (error) {
       console.error('Error saving assignment:', error);
       alert("Error saving assignment. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,13 +173,14 @@ export default function AssignmentEditor() {
     }
   };
 
-  // Show loading while checking authentication
-  if (!state.isAuthenticated || !state.user) {
+  // Show loading while checking authentication or loading assignment
+  if (!state.isAuthenticated || !state.user || (isEditing && loading)) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
+        {isEditing && <p className="ms-3">Loading assignment...</p>}
       </div>
     );
   }
@@ -205,10 +220,18 @@ export default function AssignmentEditor() {
           <strong>User:</strong> {currentUser.firstName} {currentUser.lastName} 
           <span className="badge bg-success ms-2">{currentUser.role}</span>
           {isEditing && <span className="ms-2 text-muted">• Editing Assignment ID: {aid}</span>}
+          <span className="ms-2 text-muted">• Data from MongoDB</span>
         </p>
       </div>
 
-      <h2 className="mb-4">{pageTitle}</h2>
+      <h2 className="mb-4">
+        {pageTitle}
+        {loading && (
+          <div className="spinner-border spinner-border-sm text-primary ms-3" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        )}
+      </h2>
       
       {/* Assignment Name */}
       <div className="mb-3">
@@ -219,6 +242,7 @@ export default function AssignmentEditor() {
           value={assignment.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
           placeholder="Enter assignment name"
+          disabled={loading}
         />
       </div>
 
@@ -231,6 +255,7 @@ export default function AssignmentEditor() {
           value={assignment.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
           placeholder="Enter assignment description"
+          disabled={loading}
           style={{ 
             border: '1px solid #dee2e6',
             fontSize: '14px',
@@ -252,6 +277,7 @@ export default function AssignmentEditor() {
             onChange={(e) => handleInputChange('points', parseInt(e.target.value) || 0)}
             style={{ width: '100px' }}
             min="0"
+            disabled={loading}
           />
         </div>
       </div>
@@ -266,6 +292,7 @@ export default function AssignmentEditor() {
             className="form-select"
             value={assignment.group}
             onChange={(e) => handleInputChange('group', e.target.value)}
+            disabled={loading}
           >
             <option value="ASSIGNMENTS">ASSIGNMENTS</option>
             <option value="QUIZZES">QUIZZES</option>
@@ -285,6 +312,7 @@ export default function AssignmentEditor() {
             className="form-select"
             value={assignment.gradeAs}
             onChange={(e) => handleInputChange('gradeAs', e.target.value)}
+            disabled={loading}
           >
             <option value="Percentage">Percentage</option>
             <option value="Complete/Incomplete">Complete/Incomplete</option>
@@ -305,6 +333,7 @@ export default function AssignmentEditor() {
             className="form-select"
             value={assignment.submissionType}
             onChange={(e) => handleInputChange('submissionType', e.target.value)}
+            disabled={loading}
           >
             <option value="No Submission">No Submission</option>
             <option value="Online">Online</option>
@@ -329,6 +358,7 @@ export default function AssignmentEditor() {
                   checked={assignment.onlineOptions.textEntry}
                   onChange={(e) => handleOnlineOptionChange('textEntry', e.target.checked)}
                   id="textEntry"
+                  disabled={loading}
                 />
                 <label className="form-check-label" htmlFor="textEntry">
                   Text Entry
@@ -341,6 +371,7 @@ export default function AssignmentEditor() {
                   checked={assignment.onlineOptions.websiteUrl}
                   onChange={(e) => handleOnlineOptionChange('websiteUrl', e.target.checked)}
                   id="websiteUrl"
+                  disabled={loading}
                 />
                 <label className="form-check-label" htmlFor="websiteUrl">
                   Website URL
@@ -353,6 +384,7 @@ export default function AssignmentEditor() {
                   checked={assignment.onlineOptions.mediaRecordings}
                   onChange={(e) => handleOnlineOptionChange('mediaRecordings', e.target.checked)}
                   id="mediaRecordings"
+                  disabled={loading}
                 />
                 <label className="form-check-label" htmlFor="mediaRecordings">
                   Media Recordings
@@ -365,6 +397,7 @@ export default function AssignmentEditor() {
                   checked={assignment.onlineOptions.studentAnnotation}
                   onChange={(e) => handleOnlineOptionChange('studentAnnotation', e.target.checked)}
                   id="studentAnnotation"
+                  disabled={loading}
                 />
                 <label className="form-check-label" htmlFor="studentAnnotation">
                   Student Annotation
@@ -377,6 +410,7 @@ export default function AssignmentEditor() {
                   checked={assignment.onlineOptions.fileUploads}
                   onChange={(e) => handleOnlineOptionChange('fileUploads', e.target.checked)}
                   id="fileUploads"
+                  disabled={loading}
                 />
                 <label className="form-check-label" htmlFor="fileUploads">
                   File Uploads
@@ -410,6 +444,7 @@ export default function AssignmentEditor() {
                   className="form-control"
                   value={assignment.due}
                   onChange={(e) => handleInputChange('due', e.target.value)}
+                  disabled={loading}
                 />
               </div>
               <div className="col-4">
@@ -419,6 +454,7 @@ export default function AssignmentEditor() {
                   className="form-control"
                   value={assignment.availableFrom}
                   onChange={(e) => handleInputChange('availableFrom', e.target.value)}
+                  disabled={loading}
                 />
               </div>
               <div className="col-4">
@@ -428,6 +464,7 @@ export default function AssignmentEditor() {
                   className="form-control"
                   value={assignment.until}
                   onChange={(e) => handleInputChange('until', e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -440,14 +477,16 @@ export default function AssignmentEditor() {
         <button 
           className="btn btn-outline-secondary"
           onClick={handleCancel}
+          disabled={loading}
         >
           Cancel
         </button>
         <button 
           className="btn btn-danger"
           onClick={handleSave}
+          disabled={loading}
         >
-          {saveButtonText}
+          {loading ? (isEditing ? 'Updating...' : 'Creating...') : saveButtonText}
         </button>
       </div>
 
@@ -459,6 +498,7 @@ export default function AssignmentEditor() {
         <br />Mode: {isEditing ? 'Editing' : 'Creating'}
         <br />Auth Status: {state.isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
         <br />User: {currentUser.firstName} {currentUser.lastName} ({currentUser.role})
+        <br />Data Source: MongoDB
       </div>
     </div>
   );
