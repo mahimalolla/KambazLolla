@@ -141,7 +141,72 @@ export const findAllUsers = async () => {
   }
 };
 
-// NEW: Add functions for enrollment
+// NEW: Find user by ID (6.2.6.4)
+export const findUserById = async (userId: string) => {
+  try {
+    console.log('Fetching user by ID:', userId);
+    const response = await axiosWithCredentials.get(`${USERS_API}/${userId}`);
+    console.log('User fetched:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to fetch user by ID:', error);
+    throw error;
+  }
+};
+
+// NEW: Find users by role (6.2.6.3)
+export const findUsersByRole = async (role: string) => {
+  try {
+    console.log('Fetching users by role:', role);
+    const response = await axiosWithCredentials.get(`${USERS_API}?role=${role}`);
+    console.log('Users by role fetched:', response.data?.length || 0, 'users');
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to fetch users by role:', error);
+    throw error;
+  }
+};
+
+// NEW: Find users by partial name (6.2.6.3)
+export const findUsersByPartialName = async (name: string) => {
+  try {
+    console.log('Fetching users by name:', name);
+    const response = await axiosWithCredentials.get(`${USERS_API}?name=${name}`);
+    console.log('Users by name fetched:', response.data?.length || 0, 'users');
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to fetch users by name:', error);
+    throw error;
+  }
+};
+
+// NEW: Delete user (6.2.6.5)
+export const deleteUser = async (userId: string) => {
+  try {
+    console.log('Deleting user:', userId);
+    const response = await axiosWithCredentials.delete(`${USERS_API}/${userId}`);
+    console.log('User deleted successfully');
+    return response.data;
+  } catch (error: any) {
+    console.error('Delete user failed:', error);
+    throw error;
+  }
+};
+
+// NEW: Create user (6.2.6.7) 
+export const createUser = async (user: any) => {
+  try {
+    console.log('Creating user:', user.username);
+    const response = await axiosWithCredentials.post(`${USERS_API}`, user);
+    console.log('User created successfully:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Create user failed:', error);
+    throw error;
+  }
+};
+
+// Enrollment functions
 export const findCoursesForUser = async (userId: string) => {
   try {
     const response = await axiosWithCredentials.get(`${USERS_API}/${userId}/courses`);
