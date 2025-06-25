@@ -134,16 +134,18 @@ export const getCurrentUser = async () => {
   }
 };
 
-// Get current user's enrolled courses - FIXED: Use the right endpoint
+// In Courses/client.ts, update findMyCourses:
 export const findMyCourses = async () => {
   try {
+    console.log('Making request to:', `${REMOTE_SERVER}/api/users/current/courses`);
     const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/current/courses`);
-    return data || [];
+    console.log('findMyCourses response:', data);
+    return Array.isArray(data) ? data : [];
   } catch (error) {
+    console.error('Error fetching user courses:', error);
     if (error.response?.status === 401) {
       return []; // User not authenticated
     }
-    console.error('Error fetching user courses:', error);
     return []; // Return empty array instead of throwing for better UX
   }
 };
