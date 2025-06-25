@@ -10,6 +10,11 @@ import People from "./People";
 import PiazzaDiscussions from "./Piazza";
 import Zoom from "./Zoom";
 import Quizzes from "./Quizzes";
+import QuizDetails from "./Quizzes/details";
+import QuizEditor from "./Quizzes/Editor";
+import QuizTaking from "./Quizzes/quiz";
+import QuizResults from "./Quizzes/results";
+import QuizPreview from "./Quizzes/preview";
 
 export default function Courses({ courses }: { courses: any[] }) {
   const { cid } = useParams();
@@ -69,11 +74,18 @@ export default function Courses({ courses }: { courses: any[] }) {
             <Route path="Zoom" element={<Zoom />} />
             <Route path="Assignments" element={<Assignments />} />
             
-            {/* ADD THESE TWO EDITOR ROUTES */}
+            {/* Assignment Routes */}
             <Route path="Assignments/editor" element={<AssignmentEditor />} />
             <Route path="Assignments/:aid/editor" element={<AssignmentEditor />} />
             
+            {/* 👈 ADD ALL THESE QUIZ ROUTES */}
             <Route path="Quizzes" element={<Quizzes />} />
+            <Route path="Quizzes/:quizId" element={<QuizDetails />} />
+            <Route path="Quizzes/:quizId/edit" element={<QuizEditor />} />
+            <Route path="Quizzes/:quizId/take" element={<QuizTaking />} />
+            <Route path="Quizzes/:quizId/results" element={<QuizResults />} />
+            <Route path="Quizzes/:quizId/preview" element={<QuizPreview />} />
+            
             <Route path="Grades" element={<Grades />} />
             <Route path="People" element={<People />} />
           </Routes>
