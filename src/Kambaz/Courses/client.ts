@@ -321,6 +321,76 @@ export const deleteModule = async (moduleId: string) => {
   }
 };
 
+// ============ ASSIGNMENT FUNCTIONS (ADD THESE TO YOUR COURSE CLIENT) ============
+
+// Get assignments for a course
+export const findAssignmentsForCourse = async (courseId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/courses/${courseId}/assignments`);
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching assignments:', error);
+    return [];
+  }
+};
+
+// Get assignment by ID
+export const findAssignmentById = async (assignmentId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/assignments/${assignmentId}`);
+    return data;
+  } catch (error) {
+    console.error('Error fetching assignment:', error);
+    throw new Error('Failed to fetch assignment details.');
+  }
+};
+
+// Create assignment for a course
+export const createAssignmentForCourse = async (courseId: string, assignmentData: any) => {
+  try {
+    const { data } = await axiosWithCredentials.post(`${REMOTE_SERVER}/api/courses/${courseId}/assignments`, assignmentData);
+    return data;
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    throw new Error('Failed to create assignment.');
+  }
+};
+
+// Update assignment
+export const updateAssignment = async (assignmentId: string, assignmentData: any) => {
+  try {
+    const { data } = await axiosWithCredentials.put(`${REMOTE_SERVER}/api/assignments/${assignmentId}`, assignmentData);
+    return data;
+  } catch (error) {
+    console.error('Error updating assignment:', error);
+    throw new Error('Failed to update assignment.');
+  }
+};
+
+// Delete assignment
+export const deleteAssignment = async (assignmentId: string) => {
+  try {
+    const { data } = await axiosWithCredentials.delete(`${REMOTE_SERVER}/api/assignments/${assignmentId}`);
+    return data;
+  } catch (error) {
+    console.error('Error deleting assignment:', error);
+    throw new Error('Failed to delete assignment.');
+  }
+};
+
+// ============ UPDATE YOUR DEFAULT EXPORT TO INCLUDE ASSIGNMENTS ============
+
+const courseClient = {
+  // ... existing functions ...
+  
+  // Assignment functions
+  findAssignmentsForCourse,
+  findAssignmentById,
+  createAssignmentForCourse,
+  updateAssignment,
+  deleteAssignment,
+  
+};
 // ============ DEFAULT EXPORT ============
 
 const courseClient = {
