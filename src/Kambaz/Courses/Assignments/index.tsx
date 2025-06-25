@@ -1,50 +1,70 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../../../AuthContext"; 
-import * as db from "../../Database";
+import courseClient from "../client"; // Use course client instead of local db
 
 export default function Assignments() {
   const { cid } = useParams();
   const { state } = useAuth(); 
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [course, setCourse] = useState<any>(null);
   
-  // Load assignments when component mounts or when course changes
+  // Load assignments from MongoDB when component mounts or when course changes
   useEffect(() => {
     loadAssignments();
   }, [cid]);
 
-  const loadAssignments = () => {
-    // Filter assignments for this course
-    const courseAssignments = db.assignments.filter(
-      (assignment: any) => assignment.course === cid
-    );
-    setAssignments(courseAssignments);
+  const loadAssignments = async () => {
+    if (!cid) return;
+    
+    try {
+      setLoading(true);
+      
+      // Load course details
+      const courseData = await courseClient.findCourseById(cid);
+      setCourse(courseData);
+      
+      // Load assignments for this course from MongoDB
+      const assignmentsData = await courseClient.findAssignmentsForCourse(cid);
+      console.log('Loaded assignments from database:', assignmentsData);
+      setAssignments(assignmentsData);
+      
+    } catch (error) {
+      console.error("Error loading assignments:", error);
+      setAssignments([]); // Fallback to empty array
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Delete assignment function
-  const deleteAssignment = (assignmentId: string, assignmentTitle: string) => {
+  // Delete assignment function using MongoDB API
+  const deleteAssignment = async (assignmentId: string, assignmentTitle: string) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete the assignment "${assignmentTitle}"?\n\nThis action cannot be undone.`
     );
     
     if (confirmed) {
       try {
-        const assignmentIndex = db.assignments.findIndex(
-          (assignment: any) => assignment._id === assignmentId
+        setLoading(true);
+        
+        // Call API to delete assignment from database
+        await courseClient.deleteAssignment(assignmentId);
+        
+        console.log('Deleted assignment:', assignmentId);
+        
+        // Remove from local state
+        setAssignments(prevAssignments => 
+          prevAssignments.filter(assignment => assignment._id !== assignmentId)
         );
         
-        if (assignmentIndex !== -1) {
-          db.assignments.splice(assignmentIndex, 1);
-          setAssignments(prevAssignments => 
-            prevAssignments.filter(assignment => assignment._id !== assignmentId)
-          );
-          alert(`Assignment "${assignmentTitle}" has been deleted successfully!`);
-        } else {
-          alert('Error: Assignment not found!');
-        }
+        alert(`Assignment "${assignmentTitle}" has been deleted successfully!`);
+        
       } catch (error) {
         console.error('Error deleting assignment:', error);
         alert('Error deleting assignment. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -68,6 +88,19 @@ export default function Assignments() {
     );
   }
 
+  if (loading && assignments.length === 0) {
+    return (
+      <div id="wd-assignments" className="container-fluid">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3">Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id="wd-assignments" className="container-fluid">
       {/* Header Section */}
@@ -75,6 +108,13 @@ export default function Assignments() {
         <div className="d-flex align-items-center">
           <h3 className="mb-0">📊 ASSIGNMENTS</h3>
           <span className="ms-3 text-muted">40% of Total</span>
+          {loading && (
+            <div className="ms-3">
+              <div className="spinner-border spinner-border-sm text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* FACULTY-ONLY: Add Assignment Button */}
@@ -121,6 +161,13 @@ export default function Assignments() {
         </button>
       </div>
 
+      {/* MongoDB Info */}
+      <div className="mb-3">
+        <small className="text-muted">
+          Showing assignments for {course?.name || 'this course'} • Data from MongoDB • Total: {assignments.length} assignments
+        </small>
+      </div>
+
       {/* Assignments Table */}
       <div className="table-responsive">
         <table className="table table-striped">
@@ -155,12 +202,14 @@ export default function Assignments() {
                       )}
                       <div className="text-muted small mt-1">
                         <span className="text-danger">Multiple Modules</span> | 
-                        <strong> Not available until</strong> {assignment.availableFrom} | 
+                        <strong> Not available until</strong> {assignment.availableDate || assignment.availableFrom} | 
                         <strong> Due</strong> {assignment.dueDate}
                       </div>
                       {assignment.description && (
                         <div className="text-muted small mt-1">
-                          {assignment.description}
+                          {assignment.description.length > 100 
+                            ? `${assignment.description.substring(0, 100)}...` 
+                            : assignment.description}
                         </div>
                       )}
                     </div>
@@ -173,7 +222,7 @@ export default function Assignments() {
                   {assignment.points} pts
                 </td>
                 <td className="text-nowrap">
-                  {assignment.availableFrom} - {assignment.availableUntil}
+                  {assignment.availableDate || assignment.availableFrom} - {assignment.untilDate || assignment.until || 'No end date'}
                 </td>
                 
                 {/* FACULTY-ONLY: Action Buttons */}
@@ -193,6 +242,7 @@ export default function Assignments() {
                         className="btn btn-outline-danger btn-sm"
                         title="Delete Assignment"
                         onClick={() => deleteAssignment(assignment._id, assignment.title)}
+                        disabled={loading}
                       >
                         🗑️
                       </button>
@@ -212,19 +262,31 @@ export default function Assignments() {
       </div>
 
       {/* No Assignments Message */}
-      {assignments.length === 0 && (
-        <div className="alert alert-info">
-          <h5>No Assignments Found</h5>
-          <p className="mb-0">
+      {assignments.length === 0 && !loading && (
+        <div 
+          style={{ 
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '40px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid #e9ecef'
+          }}
+        >
+          <h4 style={{ color: '#6c757d', marginBottom: '10px' }}>No assignments found</h4>
+          <p style={{ color: '#6c757d' }}>
             {isFaculty 
-              ? "No assignments have been created for this course yet. Click '+ Assignment' to create one."
+              ? "This course doesn't have any assignments yet. Click the '+ Assignment' button to create your first assignment."
               : "No assignments are available for this course yet."
             }
           </p>
+          <small style={{ color: '#adb5bd' }}>
+            Data loaded from MongoDB • Course ID: {cid}
+          </small>
         </div>
       )}
 
-      {/* Role Info Footer */}
+      {/* Assignment Stats Footer */}
       <div className="mt-4 p-3 bg-light rounded">
         <div className="d-flex justify-content-between align-items-center">
           <div>
@@ -237,6 +299,22 @@ export default function Assignments() {
             ) : (
               "👀 Student: View-only access to assignments"
             )}
+          </div>
+        </div>
+        <div className="mt-2">
+          <div className="row text-center">
+            <div className="col">
+              <strong>Total Assignments</strong><br />
+              <span className="fs-5 text-primary">{assignments.length}</span>
+            </div>
+            <div className="col">
+              <strong>Course</strong><br />
+              <span className="fs-6 text-info">{course?.name || 'Loading...'}</span>
+            </div>
+            <div className="col">
+              <strong>Data Source</strong><br />
+              <span className="fs-6 text-success">MongoDB</span>
+            </div>
           </div>
         </div>
       </div>
