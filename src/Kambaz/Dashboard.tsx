@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import * as db from "./Database";
+import * as courseClient from "./Courses/client";
 
 export default function Dashboard() {
   const { state: authState, logout } = useAuth(); 
@@ -14,76 +14,13 @@ export default function Dashboard() {
     number: "",
     startDate: "",
     endDate: "",
-    department: "CCIS",
+    department: "CS",
     credits: 4
   });
   const [activeSection, setActiveSection] = useState("my-courses");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
-  // FIXED: Dynamic API_BASE that works for both development and production
-  const API_BASE = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:4000/api' 
-    : 'https://kambaz-node.onrender.com/api';
-
-  const getUserCoursesFromAPI = async (userId: string) => {
-    try {
-      console.log(`Fetching courses for user ${userId} from ${API_BASE}`);
-      const response = await fetch(`${API_BASE}/enrollments/user/${userId}/courses`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('API Response:', data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching user courses:', error);
-      throw error;
-    }
-  };
-
-  const enrollUserViaAPI = async (userId: string, courseId: string) => {
-    try {
-      console.log(`Enrolling user ${userId} in course ${courseId}`);
-      const response = await fetch(`${API_BASE}/enrollments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, courseId }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error enrolling user:', error);
-      throw error;
-    }
-  };
-
-  const unenrollUserViaAPI = async (userId: string, courseId: string) => {
-    try {
-      console.log(`Unenrolling user ${userId} from course ${courseId}`);
-      const response = await fetch(`${API_BASE}/enrollments/${userId}/${courseId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error unenrolling user:', error);
-      throw error;
-    }
-  };
 
   // Load courses and enrollment data
   useEffect(() => {
@@ -92,23 +29,20 @@ export default function Dashboard() {
     }
   }, [authState.user]);
 
-  // UPDATED: Load user data using API calls with better error handling
+  // Load user data using MongoDB API
   const loadUserData = async () => {
     if (!authState.user) return;
     
     try {
       setLoading(true);
-      console.log('Loading user data...');
+      console.log('Loading user data from MongoDB...');
       
-      // Get all courses from local database (for creating new courses)
-      const allCoursesData = db.courses || [];
+      // Get all courses from MongoDB
+      const allCoursesData = await courseClient.findAllCourses();
       setAllCourses(allCoursesData);
       
-      // Get user's enrolled courses from API
-      const userCoursesFromAPI = await getUserCoursesFromAPI(authState.user._id);
-      
-      // Extract just the course details from the API response
-      const userCourses = userCoursesFromAPI.map((enrollment: any) => enrollment.courseDetails).filter(Boolean);
+      // Get user's enrolled courses from MongoDB
+      const userCourses = await courseClient.findCoursesByUserId(authState.user._id);
       console.log('User enrolled courses:', userCourses);
       setCourses(userCourses);
       
@@ -118,27 +52,12 @@ export default function Dashboard() {
       );
       setAvailableCourses(available);
       
-      // Clear any previous error messages
       setMessage("");
       
     } catch (error) {
       console.error("Error loading user data:", error);
       setMessage(`❌ Error loading course data: ${error.message}`);
       setTimeout(() => setMessage(""), 5000);
-      
-      // Fallback to local data if API fails
-      try {
-        const userCourses = db.getCoursesByUser(authState.user._id);
-        setCourses(userCourses);
-        const allCoursesData = db.courses || [];
-        setAllCourses(allCoursesData);
-        const available = allCoursesData.filter(course => 
-          !userCourses.some(enrolled => enrolled._id === course._id)
-        );
-        setAvailableCourses(available);
-      } catch (fallbackError) {
-        console.error("Fallback to local data also failed:", fallbackError);
-      }
     } finally {
       setLoading(false);
     }
@@ -185,70 +104,100 @@ export default function Dashboard() {
   }
 
   const currentUser = authState.user;
-  const isFaculty = currentUser.role === "FACULTY";
+  const isFaculty = currentUser.role === "FACULTY" || currentUser.role === "ADMIN";
   const isStudent = currentUser.role === "STUDENT";
 
-  // Course management functions (existing)
-  const addNewCourse = () => {
+  // FIXED: Use MongoDB API for course creation
+  const addNewCourse = async () => {
     if (!course.name.trim()) {
       setMessage("❌ Please enter a course name");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
     
-    const newCourse = db.createCourse({
-      name: course.name,
-      description: course.description,
-      number: course.number || `CS${Math.floor(Math.random() * 9000) + 1000}`,
-      startDate: course.startDate || new Date().toISOString().split('T')[0],
-      endDate: course.endDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      department: course.department,
-      credits: course.credits,
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"
-    });
-    
-    // Add enrollment for faculty who creates the course
-    db.enrollUserInCourse(currentUser._id, newCourse._id);
-    
-    // Refresh data
-    loadUserData();
-    
-    // Reset form
-    setCourse({
-      name: "",
-      description: "",
-      number: "",
-      startDate: "",
-      endDate: "",
-      department: "CCIS",
-      credits: 4
-    });
-    
-    setMessage("✅ Course created successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    try {
+      setLoading(true);
+      
+      const newCourseData = {
+        name: course.name,
+        description: course.description,
+        number: course.number || `CS${Math.floor(Math.random() * 9000) + 1000}`,
+        credits: course.credits,
+        department: course.department,
+        image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=300&fit=crop"
+      };
+      
+      // Create course using MongoDB API
+      const newCourse = await courseClient.createCourse(newCourseData);
+      console.log('Course created:', newCourse);
+      
+      // Refresh data from server
+      await loadUserData();
+      
+      // Reset form
+      setCourse({
+        name: "",
+        description: "",
+        number: "",
+        startDate: "",
+        endDate: "",
+        department: "CS",
+        credits: 4
+      });
+      
+      setMessage("✅ Course created successfully!");
+      setTimeout(() => setMessage(""), 3000);
+      
+    } catch (error) {
+      console.error('Error creating course:', error);
+      setMessage(`❌ Failed to create course: ${error.message}`);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateCourse = () => {
+  // FIXED: Use MongoDB API for course updates
+  const updateCourse = async () => {
     if (!course._id) {
       setMessage("❌ Please select a course to update");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
     
-    db.updateCourse(course._id, course);
-    loadUserData();
-    setMessage("✅ Course updated successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    try {
+      setLoading(true);
+      await courseClient.updateCourse(course._id, course);
+      await loadUserData();
+      setMessage("✅ Course updated successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      console.error('Error updating course:', error);
+      setMessage(`❌ Failed to update course: ${error.message}`);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteCourse = (courseId: string) => {
-    db.deleteCourse(courseId);
-    loadUserData();
-    setMessage("✅ Course deleted successfully!");
-    setTimeout(() => setMessage(""), 3000);
+  // FIXED: Use MongoDB API for course deletion
+  const deleteCourse = async (courseId: string) => {
+    try {
+      setLoading(true);
+      await courseClient.deleteCourse(courseId);
+      await loadUserData();
+      setMessage("✅ Course deleted successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      setMessage(`❌ Failed to delete course: ${error.message}`);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // UPDATED: Use API for enrollment
+  // FIXED: Use MongoDB API for enrollment
   const handleEnroll = async (courseId: string, courseName: string) => {
     if (!currentUser) return;
     
@@ -258,8 +207,8 @@ export default function Dashboard() {
     
     try {
       setLoading(true);
-      await enrollUserViaAPI(currentUser._id, courseId);
-      await loadUserData(); // Reload data from API
+      await courseClient.enrollInCourse(currentUser._id, courseId);
+      await loadUserData(); // Reload data from MongoDB
       setMessage(`✅ Successfully enrolled in ${courseName}!`);
       setTimeout(() => setMessage(""), 3000);
     } catch (error: any) {
@@ -271,7 +220,7 @@ export default function Dashboard() {
     }
   };
 
-  // UPDATED: Use API for unenrollment
+  // FIXED: Use MongoDB API for unenrollment
   const handleUnenroll = async (courseId: string, courseName: string) => {
     if (!currentUser) {
       setMessage("❌ User not authenticated");
@@ -285,8 +234,8 @@ export default function Dashboard() {
     
     try {
       setLoading(true);
-      await unenrollUserViaAPI(currentUser._id, courseId);
-      await loadUserData(); // Reload data from API
+      await courseClient.unenrollFromCourse(currentUser._id, courseId);
+      await loadUserData(); // Reload data from MongoDB
       setMessage(`✅ Successfully dropped ${courseName}!`);
       setTimeout(() => setMessage(""), 3000);
     } catch (error: any) {
@@ -394,7 +343,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Debug Info - Remove this after testing */}
+        {/* Debug Info */}
         <div style={{
           backgroundColor: '#f0f8ff',
           border: '1px solid #b3d7ff',
@@ -403,7 +352,7 @@ export default function Dashboard() {
           marginBottom: '20px',
           fontSize: '0.9rem'
         }}>
-          <strong>Debug Info:</strong> Using API: {API_BASE} | User ID: {currentUser._id} | Enrolled: {courses.length} courses
+          <strong>MongoDB Integration:</strong> User ID: {currentUser._id} | Enrolled: {courses.length} courses | Available: {availableCourses.length} courses
         </div>
 
         {/* Stats Section */}
@@ -501,6 +450,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
                   onClick={updateCourse}
+                  disabled={loading}
                   style={{
                     background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                     color: 'white',
@@ -509,13 +459,15 @@ export default function Dashboard() {
                     padding: '10px 20px',
                     fontSize: '0.9rem',
                     fontWeight: '500',
-                    cursor: 'pointer'
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.6 : 1
                   }}
                 >
-                  Update Course
+                  {loading ? 'Updating...' : 'Update Course'}
                 </button>
                 <button 
                   onClick={addNewCourse}
+                  disabled={loading}
                   style={{
                     background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                     color: 'white',
@@ -524,10 +476,11 @@ export default function Dashboard() {
                     padding: '10px 20px',
                     fontSize: '0.9rem',
                     fontWeight: '500',
-                    cursor: 'pointer'
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.6 : 1
                   }}
                 >
-                  Add Course
+                  {loading ? 'Creating...' : 'Add Course'}
                 </button>
               </div>
             </div>
@@ -542,6 +495,21 @@ export default function Dashboard() {
                 value={course.name} 
                 onChange={(e) => setCourse({...course, name: e.target.value})}
                 placeholder="Course Name"
+                disabled={loading}
+                style={{
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
+              <input 
+                type="text"
+                value={course.number} 
+                onChange={(e) => setCourse({...course, number: e.target.value})}
+                placeholder="Course Number (e.g., CS5610)"
+                disabled={loading}
                 style={{
                   padding: '12px',
                   border: '2px solid #e5e7eb',
@@ -555,13 +523,15 @@ export default function Dashboard() {
                 onChange={(e) => setCourse({...course, description: e.target.value})}
                 placeholder="Course Description"
                 rows={3}
+                disabled={loading}
                 style={{
                   padding: '12px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
                   fontSize: '1rem',
                   outline: 'none',
-                  resize: 'vertical'
+                  resize: 'vertical',
+                  gridColumn: '1 / -1'
                 }}
               />
             </div>
@@ -765,6 +735,7 @@ export default function Dashboard() {
                             event.preventDefault();
                             setCourse(courseItem);
                           }}
+                          disabled={loading}
                           style={{
                             flex: 1,
                             background: 'linear-gradient(135deg, #f59e0b, #d97706)',
@@ -774,7 +745,8 @@ export default function Dashboard() {
                             padding: '8px 16px',
                             fontSize: '0.8rem',
                             fontWeight: '500',
-                            cursor: 'pointer'
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.6 : 1
                           }}
                         >
                           ✏️ Edit
@@ -786,6 +758,7 @@ export default function Dashboard() {
                               deleteCourse(courseItem._id);
                             }
                           }}
+                          disabled={loading}
                           style={{
                             flex: 1,
                             background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
@@ -795,7 +768,8 @@ export default function Dashboard() {
                             padding: '8px 16px',
                             fontSize: '0.8rem',
                             fontWeight: '500',
-                            cursor: 'pointer'
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.6 : 1
                           }}
                         >
                           🗑️ Delete
