@@ -134,7 +134,7 @@ export const getCurrentUser = async () => {
   }
 };
 
-// Get user's enrolled courses - FIXED: Updated to match your backend
+// Get current user's enrolled courses - FIXED: Use the right endpoint
 export const findMyCourses = async () => {
   try {
     const { data } = await axiosWithCredentials.get(`${REMOTE_SERVER}/api/users/current/courses`);
