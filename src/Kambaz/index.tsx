@@ -29,32 +29,40 @@ export default function Kambaz() {
     }
   }, [currentUser, isAuthenticated, authLoading]);
 
-  const loadCourses = async () => {
-    try {
-      setLoading(true);
-      let coursesData;
-      
-      console.log('Loading courses for user:', currentUser?.username, 'Role:', currentUser?.role);
-      
-      // Load different courses based on user role
-      if (currentUser?.role === 'ADMIN' || currentUser?.role === 'FACULTY') {
-        // Admin and Faculty can see all courses
-        coursesData = await courseClient.findAllCourses();
-        console.log('Loaded all courses for admin/faculty:', coursesData.length);
-      } else {
-        // Students only see courses they're enrolled in
-        coursesData = await courseClient.findMyCourses();
-        console.log('Loaded enrolled courses for student:', coursesData.length);
-      }
-      
-      setCourses(coursesData);
-    } catch (error) {
-      console.error('Error loading courses:', error);
-      setCourses([]); // Fallback to empty array
-    } finally {
-      setLoading(false);
+// In the loadCourses function, add better error handling:
+const loadCourses = async () => {
+  try {
+    setLoading(true);
+    let coursesData = [];
+    
+    console.log('Loading courses for user:', currentUser?.username, 'Role:', currentUser?.role);
+    
+    // Load different courses based on user role
+    if (currentUser?.role === 'ADMIN' || currentUser?.role === 'FACULTY') {
+      coursesData = await courseClient.findAllCourses();
+      console.log('Loaded all courses for admin/faculty:', coursesData);
+    } else if (currentUser?.role === 'STUDENT') {
+      coursesData = await courseClient.findMyCourses();
+      console.log('Loaded enrolled courses for student:', coursesData);
+    } else {
+      console.log('Unknown user role:', currentUser?.role);
     }
-  };
+    
+    // Ensure coursesData is an array and filter out null/undefined items
+    const validCourses = Array.isArray(coursesData) 
+      ? coursesData.filter(course => course && course._id) 
+      : [];
+      
+    console.log('Valid courses after filtering:', validCourses);
+    setCourses(validCourses);
+    
+  } catch (error) {
+    console.error('Error loading courses:', error);
+    setCourses([]); // Fallback to empty array
+  } finally {
+    setLoading(false);
+  }
+};
 
   const addNewCourse = async (courseData: any) => {
     try {
