@@ -58,57 +58,39 @@ export default function Dashboard() {
   }, [authState.user]);
 
   // Load user data using MongoDB API
- const loadUserData = async () => {
-  if (!authState.user) return;
-  
-  try {
-    setLoading(true);
-    console.log('Loading user data from MongoDB...', authState.user._id);
+  const loadUserData = async () => {
+    if (!authState.user) return;
     
-    // Get all courses from MongoDB
-    const allCoursesData = await courseClient.findAllCourses();
-    console.log('All courses loaded:', allCoursesData);
-    
-    // Filter out any invalid courses from all courses
-    const validAllCourses = filterValidCourses(allCoursesData);
-    setAllCourses(validAllCourses);
-    
-    // Get user's enrolled courses from MongoDB
-    console.log('Loading courses for user:', authState.user._id, 'Role:', authState.user.role);
-    const userCourses = await courseClient.findMyCourses();
-    console.log('Raw user enrolled courses:', userCourses); // ✅ FIXED: was userCoursesRaw
-    
-    // Filter out any null/invalid courses from user's enrolled courses
-    const validUserCourses = filterValidCourses(userCourses); // ✅ FIXED: was userCoursesRaw
-    console.log('Valid user enrolled courses:', validUserCourses);
-    setCourses(validUserCourses);
-    
-    // Filter available courses (not enrolled) - only from valid courses
-    const available = validAllCourses.filter(course => {
-      if (!course || !course._id) return false;
-      return !validUserCourses.some(enrolled => {
-        if (!enrolled || !enrolled._id) return false;
-        return enrolled._id === course._id;
+    try {
+      setLoading(true);
+      console.log('Loading user data from MongoDB...', authState.user._id);
+      
+      // Get all courses from MongoDB
+      const allCoursesData = await courseClient.findAllCourses();
+      console.log('All courses loaded:', allCoursesData);
+      
+      // Filter out any invalid courses from all courses
+      const validAllCourses = filterValidCourses(allCoursesData);
+      setAllCourses(validAllCourses);
+      
+      // Get user's enrolled courses from MongoDB
+      console.log('Loading courses for user:', authState.user._id, 'Role:', authState.user.role);
+      const userCourses = await courseClient.findMyCourses();
+      console.log('Raw user enrolled courses:', userCourses);
+      
+      // Filter out any null/invalid courses from user's enrolled courses
+      const validUserCourses = filterValidCourses(userCourses);
+      console.log('Valid user enrolled courses:', validUserCourses);
+      setCourses(validUserCourses);
+      
+      // Filter available courses (not enrolled) - only from valid courses
+      const available = validAllCourses.filter(course => {
+        if (!course || !course._id) return false;
+        return !validUserCourses.some(enrolled => {
+          if (!enrolled || !enrolled._id) return false;
+          return enrolled._id === course._id;
+        });
       });
-    });
-    console.log('Available courses:', available);
-    setAvailableCourses(available);
-    
-    setMessage("");
-    
-  } catch (error: any) {
-    console.error("Error loading user data:", error);
-    setMessage(`❌ Error loading course data: ${error.message}`);
-    setTimeout(() => setMessage(""), 5000);
-    
-    // Reset to empty arrays on error
-    setCourses([]);
-    setAllCourses([]);
-    setAvailableCourses([]);
-  } finally {
-    setLoading(false);
-  }
-};
       console.log('Available courses:', available);
       setAvailableCourses(available);
       
