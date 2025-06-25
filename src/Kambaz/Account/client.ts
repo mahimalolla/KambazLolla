@@ -77,6 +77,7 @@ export const signup = async (user: any) => {
   }
 };
 
+// FIXED: Change from POST to POST (your backend expects POST)
 export const profile = async () => {
   try {
     console.log('Fetching user profile...');
@@ -101,7 +102,7 @@ export const signout = async () => {
   }
 };
 
-// Find user's enrolled courses
+// FIXED: Updated endpoint to match your backend
 export const findMyCourses = async () => {
   try {
     console.log('Fetching user courses...');
@@ -136,6 +137,37 @@ export const findAllUsers = async () => {
     return response.data;
   } catch (error: any) {
     console.error('Failed to fetch all users:', error);
+    throw error;
+  }
+};
+
+// NEW: Add functions for enrollment
+export const findCoursesForUser = async (userId: string) => {
+  try {
+    const response = await axiosWithCredentials.get(`${USERS_API}/${userId}/courses`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to fetch user courses:', error);
+    return [];
+  }
+};
+
+export const enrollIntoCourse = async (userId: string, courseId: string) => {
+  try {
+    const response = await axiosWithCredentials.post(`${USERS_API}/${userId}/courses/${courseId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to enroll in course:', error);
+    throw error;
+  }
+};
+
+export const unenrollFromCourse = async (userId: string, courseId: string) => {
+  try {
+    const response = await axiosWithCredentials.delete(`${USERS_API}/${userId}/courses/${courseId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Failed to unenroll from course:', error);
     throw error;
   }
 };
