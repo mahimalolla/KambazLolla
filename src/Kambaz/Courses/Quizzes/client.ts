@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const REMOTE_SERVER = process.env.REACT_APP_REMOTE_SERVER || "http://localhost:4000";
+const REMOTE_SERVER = process.env.REACT_APP_REMOTE_SERVER || "https://kambaz-node.onrender.com";
 const QUIZZES_API = `${REMOTE_SERVER}/api/courses`;
 
 // ================================
