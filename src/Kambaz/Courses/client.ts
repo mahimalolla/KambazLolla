@@ -349,6 +349,8 @@ const courseClient = {
   findAllEnrollments,
   findEnrollmentsForUser,
   findEnrollmentsForCourse,
+  updateModule,
+  deleteModule,
   
   // Assignment and Quiz functions
   findAssignmentsForCourse,
@@ -356,6 +358,7 @@ const courseClient = {
   
   // Utility functions
   checkServerHealth
+
 };
 
 export default courseClient;
