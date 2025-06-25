@@ -75,7 +75,7 @@ export default function Dashboard() {
       
       // Get user's enrolled courses from MongoDB
       console.log('Loading courses for user:', authState.user._id, 'Role:', authState.user.role);
-      const userCoursesRaw = await courseClient.findCoursesByUserId(authState.user._id);
+     const userCourses = await courseClient.findMyCourses();
       console.log('Raw user enrolled courses:', userCoursesRaw);
       
       // Filter out any null/invalid courses from user's enrolled courses
