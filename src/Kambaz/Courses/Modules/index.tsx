@@ -80,7 +80,7 @@ export default function Modules() {
       setLoading(true);
       
       // Call API to delete module from database
-      await moduleClient.deleteModule(moduleId);
+      await courseClient.deleteModule(moduleId);
       
       console.log('Deleted module:', moduleId);
       
@@ -108,7 +108,7 @@ export default function Modules() {
       setLoading(true);
       
       // Call API to update module in database
-      await moduleClient.updateModule(module._id, {
+      await courseClient.updateModule(module._id, {
         name: module.name,
         description: module.description
       });
