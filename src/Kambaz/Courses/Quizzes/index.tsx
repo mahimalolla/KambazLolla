@@ -79,42 +79,42 @@ export default function QuizList() {
   };
 
   const togglePublish = async (quizId: string) => {
-  const quiz = quizzes.find(q => q._id === quizId);
-  if (!quiz) return;
-  
-  try {
-    console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
+    const quiz = quizzes.find(q => q._id === quizId);
+    if (!quiz) return;
     
-    // Use PUT instead of PATCH - update the entire quiz
-    const updatedQuizData = {
-      ...quiz,
-      published: !quiz.published
-    };
-    
-    const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedQuizData)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    try {
+      console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
+      
+      // Use PUT instead of PATCH - update the entire quiz
+      const updatedQuizData = {
+        ...quiz,
+        published: !quiz.published
+      };
+      
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedQuizData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+      
+      const updatedQuiz = await response.json();
+      console.log("Updated quiz:", updatedQuiz);
+      
+      // Update the quiz in the list
+      setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
+      
+    } catch (err: any) {
+      console.error('Error toggling publish:', err);
+      alert('Failed to update quiz: ' + err.message);
     }
     
-    const updatedQuiz = await response.json();
-    console.log("Updated quiz:", updatedQuiz);
-    
-    // Update the quiz in the list
-    setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
-    
-  } catch (err: any) {
-    console.error('Error toggling publish:', err);
-    alert('Failed to update quiz: ' + err.message);
-  }
-  
-  setShowContextMenu(null);
-};
+    setShowContextMenu(null);
+  };
 
   const deleteQuiz = async (quizId: string) => {
     if (!window.confirm('Are you sure you want to delete this quiz?')) {
@@ -196,13 +196,19 @@ export default function QuizList() {
     );
   }
 
-  // Filter quizzes based on search and role
+  // NEW: Filter and sort quizzes
   const filteredQuizzes = quizzes
     .filter(quiz => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .filter(quiz => {
       // Students only see published quizzes
       if (isStudent) return quiz.published;
       return true; // Faculty see all
+    })
+    .sort((a, b) => {
+      // NEW: Sort by available date (earliest first)
+      const dateA = new Date(a.availableDate || a.createdAt || '1970-01-01');
+      const dateB = new Date(b.availableDate || b.createdAt || '1970-01-01');
+      return dateA.getTime() - dateB.getTime();
     });
 
   const ContextMenu = ({ quizId, quiz }: { quizId: string, quiz: any }) => (
@@ -417,6 +423,11 @@ export default function QuizList() {
                         {/* Due Date */}
                         {quiz.dueDate && (
                           <span> | Due {new Date(quiz.dueDate).toLocaleDateString()}</span>
+                        )}
+                        
+                        {/* Available Date */}
+                        {quiz.availableDate && (
+                          <span> | Available {new Date(quiz.availableDate).toLocaleDateString()}</span>
                         )}
                         
                         {/* Points */}
