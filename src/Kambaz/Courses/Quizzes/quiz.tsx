@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaClock, FaCheckCircle, FaTimesCircle, FaFlag, FaExclamationTriangle } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaTimesCircle, FaFlag, FaExclamationTriangle, FaPlay, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../../../AuthContext';
+import * as quizClient from './client';
 
 interface Question {
   _id: string;
@@ -29,9 +30,20 @@ interface Quiz {
   dueDate?: string;
   availableDate?: string;
   availableUntil?: string;
+  points: number;
+  quizType: string;
+  showCorrectAnswers: string;
 }
 
-export default function QuizTaking() {
+interface QuizAttempt {
+  _id: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  submittedAt: string;
+}
+
+export default function StudentQuizTaking() {
   const { cid, quizId } = useParams();
   const navigate = useNavigate();
   const { state } = useAuth();
@@ -44,27 +56,27 @@ export default function QuizTaking() {
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
+  const [percentage, setPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [userAttempts, setUserAttempts] = useState<any[]>([]);
+  const [userAttempts, setUserAttempts] = useState<QuizAttempt[]>([]);
   const [canTakeQuiz, setCanTakeQuiz] = useState(true);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [showAccessCode, setShowAccessCode] = useState(false);
 
   const isStudent = state.user?.role === 'STUDENT';
   const isFaculty = state.user?.role === 'FACULTY' || state.user?.role === 'ADMIN';
-  const isPreview = isFaculty; // Faculty can preview, students take for real
 
-  // NEW: Check if quiz is available based on dates
+  // Check if quiz is available based on dates and publish status
   const checkQuizAvailability = (quiz: Quiz) => {
-    if (!isStudent) return { canTake: true, reason: '' }; // Faculty can always preview
-
     const now = new Date();
     const availableDate = quiz.availableDate ? new Date(quiz.availableDate) : null;
     const availableUntil = quiz.availableUntil ? new Date(quiz.availableUntil) : null;
     const dueDate = quiz.dueDate ? new Date(quiz.dueDate) : null;
 
-    if (!quiz.published) {
+    if (!quiz.published && isStudent) {
       return { canTake: false, reason: 'This quiz is not published yet.' };
     }
 
@@ -89,13 +101,6 @@ export default function QuizTaking() {
   // Fetch quiz and user attempts when component loads
   useEffect(() => {
     if (quizId && cid && state.user) {
-      const loadQuizData = async () => {
-        await fetchQuiz();
-        if (isStudent) {
-          // Fetch attempts after quiz is loaded
-          setTimeout(() => fetchUserAttempts(), 100);
-        }
-      };
       loadQuizData();
     }
   }, [quizId, cid, state.user]);
@@ -112,21 +117,26 @@ export default function QuizTaking() {
     }
   }, [timeRemaining, isSubmitted, quizStarted]);
 
+  const loadQuizData = async () => {
+    await fetchQuiz();
+    if (isStudent) {
+      setTimeout(() => fetchUserAttempts(), 100);
+    }
+  };
+
   const fetchQuiz = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!cid || !quizId) {
+        throw new Error('Missing course ID or quiz ID');
       }
       
-      const data = await response.json();
+      const data = await quizClient.findQuizById(cid, quizId);
       console.log('Fetched quiz for taking:', data);
       
-      // NEW: Check quiz availability
+      // Check quiz availability
       const availability = checkQuizAvailability(data);
       if (!availability.canTake) {
         setError(availability.reason);
@@ -140,7 +150,7 @@ export default function QuizTaking() {
       
     } catch (err: any) {
       console.error('Error fetching quiz:', err);
-      setError('Failed to load quiz');
+      setError('Failed to load quiz: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -148,36 +158,45 @@ export default function QuizTaking() {
 
   const fetchUserAttempts = async () => {
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/attempts/${state.user._id}`);
-      
-      if (response.ok) {
-        const attempts = await response.json();
-        console.log('User attempts:', attempts);
-        setUserAttempts(attempts);
-        
-        // Check if user can still take the quiz - FIXED LOGIC
-        if (quiz && !quiz.multipleAttempts && attempts.length > 0) {
-          setCanTakeQuiz(false);
-          setError('You have already taken this quiz. Multiple attempts are not allowed.');
-          return; // Early return to prevent further checks
-        } 
-        
-        if (quiz && quiz.multipleAttempts && attempts.length >= quiz.attemptLimit) {
-          setCanTakeQuiz(false);
-          setError(`You have exhausted all ${quiz.attemptLimit} attempts for this quiz.`);
-          return; // Early return to prevent further checks
-        }
+      if (!cid || !quizId || !state.user?._id) return;
 
-        // If we get here, user can still take the quiz
-        setCanTakeQuiz(true);
-        setError(null);
+      const attempts = await quizClient.getUserAttempts(cid, quizId, state.user._id);
+      console.log('User attempts:', attempts);
+      setUserAttempts(attempts);
+      
+      // Check if user can still take the quiz
+      if (quiz && !quiz.multipleAttempts && attempts.length > 0) {
+        setCanTakeQuiz(false);
+        setError('You have already taken this quiz. Multiple attempts are not allowed.');
+        return;
+      } 
+      
+      if (quiz && quiz.multipleAttempts && attempts.length >= quiz.attemptLimit) {
+        setCanTakeQuiz(false);
+        setError(`You have exhausted all ${quiz.attemptLimit} attempts for this quiz.`);
+        return;
       }
+
+      // If we get here, user can still take the quiz
+      setCanTakeQuiz(true);
+      setError(null);
     } catch (err: any) {
       console.error('Error fetching user attempts:', err);
     }
   };
 
   const startQuiz = () => {
+    // Check access code if required
+    if (quiz?.accessCode && !showAccessCode) {
+      setShowAccessCode(true);
+      return;
+    }
+
+    if (quiz?.accessCode && accessCodeInput !== quiz.accessCode) {
+      setError('Incorrect access code. Please try again.');
+      return;
+    }
+
     // Double-check availability before starting
     if (quiz && !checkQuizAvailability(quiz).canTake) {
       setError('Quiz is no longer available.');
@@ -198,6 +217,7 @@ export default function QuizTaking() {
     }
     
     setQuizStarted(true);
+    setError(null);
     if (quiz) {
       setTimeRemaining(quiz.timeLimit * 60);
     }
@@ -249,42 +269,26 @@ export default function QuizTaking() {
   };
 
   const handleSubmit = async () => {
-    if (!quiz || !state.user) return;
+    if (!quiz || !state.user || !cid || !quizId) return;
     
     try {
       setSubmitting(true);
       
       const { totalScore, maxScore: maxScoreCalc } = calculateScore();
       
-      // Only submit if this is a real student attempt (not faculty preview)
-      if (isStudent) {
-        const attemptData = {
-          userId: state.user._id,
-          answers,
-          timeSpent: quiz.timeLimit - Math.floor(timeRemaining / 60)
-        };
-        
-        const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/attempts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(attemptData)
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('Quiz attempt submitted:', result);
-        
-        setScore(result.score);
-        setMaxScore(result.maxScore);
-      } else {
-        // Faculty preview - just calculate score locally
-        setScore(totalScore);
-        setMaxScore(maxScoreCalc);
-      }
+      // Submit the quiz attempt to the database
+      const attemptData = {
+        userId: state.user._id,
+        answers,
+        timeSpent: quiz.timeLimit - Math.floor(timeRemaining / 60)
+      };
       
+      const result = await quizClient.submitQuizAttempt(cid, quizId, attemptData);
+      console.log('Quiz attempt submitted:', result);
+      
+      setScore(result.score);
+      setMaxScore(result.maxScore);
+      setPercentage(result.percentage);
       setIsSubmitted(true);
       setShowResults(true);
       
@@ -312,10 +316,27 @@ export default function QuizTaking() {
     return false;
   };
 
+  const shouldShowCorrectAnswers = () => {
+    if (!quiz || !showResults) return false;
+    
+    switch (quiz.showCorrectAnswers) {
+      case 'Immediately':
+        return true;
+      case 'After Last Attempt':
+        return !quiz.multipleAttempts || userAttempts.length >= quiz.attemptLimit;
+      case 'After Due Date':
+        return quiz.dueDate ? new Date() > new Date(quiz.dueDate) : true;
+      case 'Never':
+        return false;
+      default:
+        return true;
+    }
+  };
+
   const renderQuestion = (question: Question, index: number) => {
     const userAnswer = answers[question._id];
     const isCorrect = isQuestionCorrect(question);
-    const showCorrectAnswer = showResults;
+    const showCorrectAnswer = shouldShowCorrectAnswers();
 
     return (
       <div key={question._id} className="card border-0 shadow-sm mb-4">
@@ -324,7 +345,7 @@ export default function QuizTaking() {
             <div className="d-flex align-items-center">
               <span className="badge bg-primary me-2">Question {index + 1}</span>
               <h6 className="mb-0">{question.title}</h6>
-              {showResults && (
+              {showResults && showCorrectAnswer && (
                 <span className="ms-2">
                   {isCorrect ? (
                     <FaCheckCircle className="text-success" />
@@ -478,6 +499,17 @@ export default function QuizTaking() {
             Back to Quizzes
           </button>
         </div>
+        
+        {/* Debug Info for Faculty */}
+        {isFaculty && (
+          <div className="mt-4 p-3 bg-light rounded">
+            <h6>Debug Information (Faculty Only):</h6>
+            <p><strong>Course ID:</strong> {cid || 'MISSING'}</p>
+            <p><strong>Quiz ID:</strong> {quizId || 'MISSING'}</p>
+            <p><strong>User Role:</strong> {state.user?.role || 'UNKNOWN'}</p>
+            <p><strong>Error:</strong> {error}</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -510,7 +542,6 @@ export default function QuizTaking() {
 
   // Quiz start screen (before timer starts)
   if (!quizStarted && !showResults) {
-    // Calculate attempt status
     const hasExceededAttempts = quiz?.multipleAttempts 
       ? userAttempts.length >= (quiz.attemptLimit || 1)
       : userAttempts.length > 0;
@@ -522,14 +553,19 @@ export default function QuizTaking() {
       <div className="container-fluid px-4 py-3">
         <div className="row justify-content-center">
           <div className="col-lg-8">
+            {/* Back Button */}
+            <div className="mb-3">
+              <button 
+                className="btn btn-outline-secondary"
+                onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}`)}
+              >
+                <FaArrowLeft className="me-1" size={12} />
+                Back to Quiz Details
+              </button>
+            </div>
+
             <div className="card border-0 shadow-sm">
               <div className="card-body text-center p-5">
-                {isPreview && (
-                  <div className="alert alert-info mb-4">
-                    <strong>PREVIEW MODE</strong> - This is how students will see the quiz
-                  </div>
-                )}
-                
                 <h3 className="fw-bold mb-3">{quiz.title}</h3>
                 {quiz.description && (
                   <p className="text-muted mb-4">{quiz.description}</p>
@@ -545,7 +581,7 @@ export default function QuizTaking() {
                     <small className="text-muted">Minutes</small>
                   </div>
                   <div className="col-md-4">
-                    <h5 className="text-warning mb-1">{quiz.questions.reduce((sum, q) => sum + q.points, 0)}</h5>
+                    <h5 className="text-warning mb-1">{quiz.points}</h5>
                     <small className="text-muted">Points</small>
                   </div>
                 </div>
@@ -596,19 +632,49 @@ export default function QuizTaking() {
                   </div>
                 )}
 
+                {/* Access Code Input */}
+                {showAccessCode && (
+                  <div className="card border-warning mb-4">
+                    <div className="card-body">
+                      <h6 className="card-title">Access Code Required</h6>
+                      <p className="text-muted">This quiz requires an access code to start.</p>
+                      <div className="input-group mb-3">
+                        <input
+                          type="password"
+                          className="form-control"
+                          placeholder="Enter access code"
+                          value={accessCodeInput}
+                          onChange={(e) => setAccessCodeInput(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && startQuiz()}
+                        />
+                        <button className="btn btn-success" onClick={startQuiz}>
+                          Start Quiz
+                        </button>
+                      </div>
+                      {error && <div className="text-danger small">{error}</div>}
+                    </div>
+                  </div>
+                )}
+
                 {/* Start button - only show if student can actually take it */}
-                {(isPreview || finalCanTake) && (
+                {finalCanTake && !showAccessCode && (
                   <button 
-                    className="btn btn-primary btn-lg"
+                    className="btn btn-success btn-lg"
                     onClick={startQuiz}
                   >
+                    <FaPlay className="me-2" />
+                    {userAttempts.length > 0 ? 'Retake Quiz' : 'Start Quiz'}
+                  </button>
+                )}
+
+                {/* Access code button */}
+                {finalCanTake && quiz.accessCode && !showAccessCode && (
+                  <button 
+                    className="btn btn-success btn-lg"
+                    onClick={() => setShowAccessCode(true)}
+                  >
                     <FaFlag className="me-2" />
-                    {isPreview 
-                      ? 'Start Preview' 
-                      : userAttempts.length > 0 
-                      ? 'Retake Quiz' 
-                      : 'Start Quiz'
-                    }
+                    {userAttempts.length > 0 ? 'Retake Quiz' : 'Start Quiz'}
                   </button>
                 )}
 
@@ -634,10 +700,7 @@ export default function QuizTaking() {
 
                 <div className="mt-3">
                   <small className="text-muted">
-                    {isPreview 
-                      ? 'Preview mode: Your answers will not be saved' 
-                      : 'Make sure you have a stable internet connection'
-                    }
+                    Make sure you have a stable internet connection before starting.
                   </small>
                 </div>
               </div>
@@ -650,45 +713,53 @@ export default function QuizTaking() {
 
   // Results view
   if (showResults) {
-    const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-
     return (
       <div className="container-fluid px-4 py-3">
-        {isPreview && (
-          <div className="alert alert-info">
-            <strong>PREVIEW MODE</strong> - This is how students will see their results
-          </div>
-        )}
-        
         <div className="text-center mb-4">
-          <h3 className="fw-bold">Quiz Results</h3>
+          <h3 className="fw-bold">Quiz Completed!</h3>
           <div className="card border-0 shadow-sm d-inline-block p-4">
             <h2 className={`mb-0 ${percentage >= 70 ? 'text-success' : 'text-danger'}`}>
               {score} / {maxScore}
             </h2>
             <p className="text-muted mb-0">({percentage}%)</p>
           </div>
+          <p className="mt-2 text-muted">
+            Submitted on {new Date().toLocaleString()}
+          </p>
         </div>
 
-        <div className="mb-4">
-          <h5>Review Your Answers:</h5>
-        </div>
+        {shouldShowCorrectAnswers() && (
+          <>
+            <div className="mb-4">
+              <h5>Review Your Answers:</h5>
+            </div>
+            {quiz.questions.map((question, index) => renderQuestion(question, index))}
+          </>
+        )}
 
-        {quiz.questions.map((question, index) => renderQuestion(question, index))}
+        {!shouldShowCorrectAnswers() && (
+          <div className="alert alert-info text-center">
+            <h6>Quiz Submitted Successfully</h6>
+            <p className="mb-0">
+              Correct answers will be shown {quiz.showCorrectAnswers.toLowerCase()}.
+            </p>
+          </div>
+        )}
 
         <div className="text-center mt-4">
           <button 
-            className="btn btn-primary"
+            className="btn btn-primary me-2"
             onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
           >
             Back to Quizzes
           </button>
-          {isStudent && canTakeQuiz && quiz.multipleAttempts && userAttempts.length < quiz.attemptLimit && (
+          
+          {canTakeQuiz && quiz.multipleAttempts && userAttempts.length < quiz.attemptLimit - 1 && (
             <button 
-              className="btn btn-success ms-2"
+              className="btn btn-success"
               onClick={() => window.location.reload()}
             >
-              Take Again
+              Take Again ({quiz.attemptLimit - userAttempts.length - 1} attempts remaining)
             </button>
           )}
         </div>
@@ -699,101 +770,98 @@ export default function QuizTaking() {
   // Active quiz taking view
   return (
     <div className="container-fluid px-4 py-3">
-      {isPreview && (
-        <div className="position-fixed top-0 start-0 w-100 bg-info text-white text-center py-2" style={{ zIndex: 1050 }}>
-          <strong>PREVIEW MODE</strong> - This is how students will take the quiz
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 className="fw-bold">{quiz.title}</h3>
+          <p className="text-muted mb-0">{quiz.description}</p>
         </div>
-      )}
-      
-      <div style={{ paddingTop: isPreview ? '50px' : '0' }}>
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h3 className="fw-bold">{quiz.title}</h3>
-            <p className="text-muted mb-0">{quiz.description}</p>
-          </div>
-          
-          {/* Timer */}
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center py-2">
-              <div className="d-flex align-items-center">
-                <FaClock className="me-2 text-muted" />
-                <span className={`fw-bold ${timeRemaining < 300 ? 'text-danger' : 'text-primary'}`}>
-                  {formatTime(timeRemaining)}
-                </span>
-              </div>
-              <small className="text-muted">Time Remaining</small>
+        
+        {/* Timer */}
+        <div className="card border-0 shadow-sm">
+          <div className="card-body text-center py-2">
+            <div className="d-flex align-items-center">
+              <FaClock className="me-2 text-muted" />
+              <span className={`fw-bold ${timeRemaining < 300 ? 'text-danger' : 'text-primary'}`}>
+                {formatTime(timeRemaining)}
+              </span>
             </div>
+            <small className="text-muted">Time Remaining</small>
           </div>
         </div>
+      </div>
 
-        {/* Progress */}
-        <div className="mb-4">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="text-muted">Progress</span>
-            <span className="text-muted">
-              {Object.keys(answers).length} of {quiz.questions.length} answered
-            </span>
-          </div>
-          <div className="progress">
-            <div 
-              className="progress-bar" 
-              role="progressbar" 
-              style={{ width: `${(Object.keys(answers).length / quiz.questions.length) * 100}%` }}
-            />
-          </div>
+      {/* Progress */}
+      <div className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <span className="text-muted">Progress</span>
+          <span className="text-muted">
+            {Object.keys(answers).length} of {quiz.questions.length} answered
+          </span>
         </div>
+        <div className="progress">
+          <div 
+            className="progress-bar" 
+            role="progressbar" 
+            style={{ width: `${(Object.keys(answers).length / quiz.questions.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
-        {/* Questions */}
-        <div className="row">
-          <div className="col-12">
-            {quiz.oneQuestionAtATime ? (
-              <div>
-                {renderQuestion(quiz.questions[currentQuestionIndex], currentQuestionIndex)}
+      {/* Questions */}
+      <div className="row">
+        <div className="col-12">
+          {quiz.oneQuestionAtATime ? (
+            <div>
+              {renderQuestion(quiz.questions[currentQuestionIndex], currentQuestionIndex)}
+              
+              <div className="d-flex justify-content-between">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
+                  disabled={currentQuestionIndex === 0}
+                >
+                  Previous
+                </button>
                 
-                <div className="d-flex justify-content-between">
+                {currentQuestionIndex < quiz.questions.length - 1 ? (
                   <button
-                    className="btn btn-outline-secondary"
-                    onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
-                    disabled={currentQuestionIndex === 0}
+                    className="btn btn-primary"
+                    onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
                   >
-                    Previous
+                    Next
                   </button>
-                  
-                  {currentQuestionIndex < quiz.questions.length - 1 ? (
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button
-                      className="btn btn-success"
-                      onClick={handleSubmit}
-                      disabled={isSubmitted || submitting}
-                    >
-                      {submitting ? 'Submitting...' : 'Submit Quiz'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div>
-                {quiz.questions.map((question, index) => renderQuestion(question, index))}
-                
-                <div className="text-center mt-4">
+                ) : (
                   <button
-                    className="btn btn-success btn-lg"
+                    className="btn btn-success"
                     onClick={handleSubmit}
-                    disabled={isSubmitted || submitting || Object.keys(answers).length === 0}
+                    disabled={isSubmitted || submitting}
                   >
                     {submitting ? 'Submitting...' : 'Submit Quiz'}
                   </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {quiz.questions.map((question, index) => renderQuestion(question, index))}
+              
+              <div className="text-center mt-4">
+                <button
+                  className="btn btn-success btn-lg"
+                  onClick={handleSubmit}
+                  disabled={isSubmitted || submitting || Object.keys(answers).length === 0}
+                >
+                  {submitting ? 'Submitting...' : 'Submit Quiz'}
+                </button>
+                <div className="mt-2">
+                  <small className="text-muted">
+                    Make sure to answer all questions before submitting.
+                  </small>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
