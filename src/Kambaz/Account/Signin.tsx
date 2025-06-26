@@ -144,13 +144,13 @@ export default function Signin() {
             Test Accounts:
           </p>
           <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
-            <strong>Iron Man:</strong> iron_man / stark123
+            <strong>Admin</strong> charlie / charlie123
           </p>
           <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
-            <strong>Faculty:</strong> alice_johnson / password123
+            <strong>Faculty:</strong> bob / bob123
           </p>
           <p style={{ margin: '4px 0', color: '#0c4a6e' }}>
-            <strong>Student:</strong> bob_smith / password123
+            <strong>Student:</strong> alice / alice123
           </p>
         </div>
 
