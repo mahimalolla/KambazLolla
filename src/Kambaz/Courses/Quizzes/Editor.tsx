@@ -52,10 +52,21 @@ export default function QuizEditor() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
 
+  // 🔍 ADD DEBUGGING: Log URL params when component loads
+  useEffect(() => {
+    console.log('🔍 QuizEditor mounted with params:', { cid, quizId });
+    console.log('🌐 Current URL:', window.location.href);
+  }, [cid, quizId]);
+
   // Fetch quiz data when component loads
   useEffect(() => {
     if (quizId && cid) {
+      console.log('🔄 Fetching quiz with params:', { cid, quizId });
       fetchQuiz();
+    } else {
+      console.error('❌ Missing required params:', { cid, quizId });
+      setError('Missing course ID or quiz ID');
+      setLoading(false);
     }
   }, [quizId, cid]);
 
@@ -64,14 +75,25 @@ export default function QuizEditor() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`);
+      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`;
+      console.log('📡 Fetching quiz from URL:', url);
+      
+      const response = await fetch(url);
+      
+      console.log('📊 Fetch response status:', response.status);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Fetch failed:', { status: response.status, error: errorText });
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Fetched quiz:', data);
+      console.log('✅ Fetched quiz successfully:', {
+        id: data._id,
+        title: data.title,
+        questionCount: data.questions?.length || 0
+      });
       
       // Convert dates for datetime-local inputs
       const formattedData = {
@@ -86,132 +108,279 @@ export default function QuizEditor() {
       setQuestions(data.questions || []);
       
     } catch (err: any) {
-      console.error('Error fetching quiz:', err);
-      setError('Failed to load quiz');
+      console.error('💥 Error fetching quiz:', err);
+      setError('Failed to load quiz: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // UPDATED: Fixed save navigation
+  // 🔧 FIXED: Enhanced saveQuiz function with debugging
   const saveQuiz = async (publish = false) => {
     try {
       setSaving(true);
       setError(null);
       
+      // 🔍 Debug: Check parameters
+      console.log('💾 Starting saveQuiz with params:', { cid, quizId, publish });
+      
+      if (!cid || !quizId) {
+        throw new Error(`Missing required parameters: cid=${cid}, quizId=${quizId}`);
+      }
+      
+      // 🔧 FIXED: Create clean quiz data without circular references
       const quizData = {
-        ...quiz,
-        questions,
-        points: questions.reduce((sum, q) => sum + q.points, 0),
+        // Only include the fields we want to save
+        title: quiz.title,
+        description: quiz.description,
+        quizType: quiz.quizType,
+        assignmentGroup: quiz.assignmentGroup,
+        shuffleAnswers: quiz.shuffleAnswers,
+        timeLimit: quiz.hasTimeLimit ? quiz.timeLimit : 0,
+        multipleAttempts: quiz.multipleAttempts,
+        attemptLimit: quiz.attemptLimit,
+        showCorrectAnswers: quiz.showCorrectAnswers,
+        accessCode: quiz.accessCode,
+        oneQuestionAtATime: quiz.oneQuestionAtATime,
+        webcamRequired: quiz.webcamRequired,
+        lockQuestionsAfterAnswering: quiz.lockQuestionsAfterAnswering,
         published: publish || quiz.published,
-        // Convert datetime-local back to ISO strings
-        dueDate: quiz.dueDate ? new Date(quiz.dueDate).toISOString() : '',
-        availableDate: quiz.availableDate ? new Date(quiz.availableDate).toISOString() : '',
-        availableUntil: quiz.availableUntil ? new Date(quiz.availableUntil).toISOString() : '',
-        timeLimit: quiz.hasTimeLimit ? quiz.timeLimit : 0
+        points: questions.reduce((sum, q) => sum + q.points, 0),
+        
+        // Convert datetime-local back to ISO strings - with null checks
+        dueDate: quiz.dueDate ? new Date(quiz.dueDate).toISOString() : null,
+        availableDate: quiz.availableDate ? new Date(quiz.availableDate).toISOString() : null,
+        availableUntil: quiz.availableUntil ? new Date(quiz.availableUntil).toISOString() : null,
+        
+        // Include questions array
+        questions: questions
       };
       
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
+      console.log('📝 Quiz data to save:', {
+        title: quizData.title,
+        published: quizData.published,
+        questionCount: quizData.questions.length,
+        points: quizData.points
+      });
+      
+      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`;
+      console.log('📡 Save URL:', url);
+      
+      const response = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(quizData)
       });
       
+      console.log('📊 Save response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Save failed:', { 
+          status: response.status, 
+          statusText: response.statusText,
+          error: errorText 
+        });
+        throw new Error(`Save failed with status ${response.status}: ${errorText}`);
       }
       
       const updatedQuiz = await response.json();
-      console.log('Saved quiz:', updatedQuiz);
+      console.log('✅ Quiz saved successfully:', {
+        id: updatedQuiz._id,
+        title: updatedQuiz.title,
+        published: updatedQuiz.published
+      });
       
-      setQuiz(updatedQuiz);
+      // Update local state
+      setQuiz(prev => ({
+        ...prev,
+        ...updatedQuiz,
+        hasTimeLimit: updatedQuiz.timeLimit > 0
+      }));
       
-      if (publish) {
-        alert('Quiz saved and published successfully!');
-        navigate(`/Kambaz/Courses/${cid}/Quizzes`); // Navigate to quiz list
-      } else {
-        alert('Quiz saved successfully!');
-        navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}`); // Navigate to details
-      }
+      // Success feedback
+      const message = publish ? 'Quiz saved and published successfully!' : 'Quiz saved successfully!';
+      alert(message);
+      
+      // Navigation - don't navigate immediately, let user see success
+      setTimeout(() => {
+        if (publish) {
+          navigate(`/Kambaz/Courses/${cid}/Quizzes`);
+        } else {
+          navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}`);
+        }
+      }, 1000);
       
     } catch (err: any) {
-      console.error('Error saving quiz:', err);
-      setError('Failed to save quiz');
+      console.error('💥 Error saving quiz:', err);
+      setError('Failed to save quiz: ' + err.message);
       alert('Failed to save quiz: ' + err.message);
     } finally {
       setSaving(false);
     }
   };
 
+  // 🔧 FIXED: Enhanced saveQuestion function with debugging
   const saveQuestion = async () => {
-    if (!editingQuestion) return;
+    if (!editingQuestion) {
+      console.log('❌ No question to save');
+      return;
+    }
     
     try {
+      console.log('💾 Starting saveQuestion:', {
+        questionId: editingQuestion._id,
+        isNew: editingQuestion._id.startsWith('q_'),
+        type: editingQuestion.type,
+        title: editingQuestion.title
+      });
+      
+      if (!cid || !quizId) {
+        throw new Error(`Missing required parameters: cid=${cid}, quizId=${quizId}`);
+      }
+      
       const isNewQuestion = editingQuestion._id.startsWith('q_');
+      
+      // 🔧 Clean question data
+      const questionData = {
+        type: editingQuestion.type,
+        title: editingQuestion.title,
+        points: editingQuestion.points,
+        question: editingQuestion.question,
+        ...(editingQuestion.type === 'multiple-choice' && {
+          choices: editingQuestion.choices,
+          correctAnswer: editingQuestion.correctAnswer
+        }),
+        ...(editingQuestion.type === 'true-false' && {
+          correctAnswer: editingQuestion.correctAnswer
+        }),
+        ...(editingQuestion.type === 'fill-blank' && {
+          possibleAnswers: editingQuestion.possibleAnswers
+        })
+      };
+      
+      console.log('📝 Question data to save:', questionData);
       
       if (isNewQuestion) {
         // Create new question
-        const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions`, {
+        const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions`;
+        console.log('📡 POST question to URL:', url);
+        
+        const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editingQuestion)
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(questionData)
         });
         
+        console.log('📊 Create question response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ Create question failed:', { 
+            status: response.status, 
+            error: errorText 
+          });
+          throw new Error(`Create question failed with status ${response.status}: ${errorText}`);
         }
         
         const newQuestion = await response.json();
+        console.log('✅ Question created successfully:', newQuestion._id);
+        
         setQuestions([...questions, newQuestion]);
         
       } else {
         // Update existing question
-        const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${editingQuestion._id}`, {
+        const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${editingQuestion._id}`;
+        console.log('📡 PUT question to URL:', url);
+        
+        const response = await fetch(url, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editingQuestion)
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(questionData)
         });
         
+        console.log('📊 Update question response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ Update question failed:', { 
+            status: response.status, 
+            error: errorText 
+          });
+          throw new Error(`Update question failed with status ${response.status}: ${errorText}`);
         }
         
         const updatedQuestion = await response.json();
-        setQuestions(questions.map(q => q._id === editingQuestion._id ? updatedQuestion : q));
+        console.log('✅ Question updated successfully:', updatedQuestion._id);
+        
+        setQuestions(questions.map(q => 
+          q._id === editingQuestion._id ? updatedQuestion : q
+        ));
       }
       
       setEditingQuestion(null);
       setIsEditingQuestion(false);
       
+      alert(isNewQuestion ? 'Question added successfully!' : 'Question updated successfully!');
+      
     } catch (err: any) {
-      console.error('Error saving question:', err);
+      console.error('💥 Error saving question:', err);
       alert('Failed to save question: ' + err.message);
     }
   };
 
+  // 🔧 FIXED: Enhanced deleteQuestion function with debugging
   const deleteQuestion = async (questionId: string) => {
     if (!window.confirm('Are you sure you want to delete this question?')) {
       return;
     }
     
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${questionId}`, {
+      console.log('🗑️ Deleting question:', questionId);
+      
+      if (!cid || !quizId) {
+        throw new Error(`Missing required parameters: cid=${cid}, quizId=${quizId}`);
+      }
+      
+      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${questionId}`;
+      console.log('📡 DELETE question URL:', url);
+      
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       
+      console.log('📊 Delete question response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Delete question failed:', { 
+          status: response.status, 
+          error: errorText 
+        });
+        throw new Error(`Delete question failed with status ${response.status}: ${errorText}`);
       }
       
+      console.log('✅ Question deleted successfully');
       setQuestions(questions.filter(q => q._id !== questionId));
+      alert('Question deleted successfully!');
       
     } catch (err: any) {
-      console.error('Error deleting question:', err);
+      console.error('💥 Error deleting question:', err);
       alert('Failed to delete question: ' + err.message);
     }
   };
 
   const handleInputChange = (field: string, value: any) => {
+    console.log('📝 Input change:', { field, value });
     setQuiz(prev => ({
       ...prev,
       [field]: value
@@ -219,6 +388,7 @@ export default function QuizEditor() {
   };
 
   const addNewQuestion = () => {
+    console.log('➕ Adding new question');
     const newQuestion: Question = {
       _id: `q_${Date.now()}`,
       type: 'multiple-choice',
@@ -233,6 +403,7 @@ export default function QuizEditor() {
   };
 
   const editQuestion = (question: Question) => {
+    console.log('✏️ Editing question:', question._id);
     setEditingQuestion({ ...question });
     setIsEditingQuestion(true);
   };
@@ -258,12 +429,23 @@ export default function QuizEditor() {
         <div className="alert alert-danger">
           <h5>Error Loading Quiz</h5>
           <p>{error}</p>
-          <button className="btn btn-outline-danger" onClick={fetchQuiz}>
-            Retry
-          </button>
-          <button className="btn btn-secondary ms-2" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}>
-            Back to Quizzes
-          </button>
+          <div className="mt-3">
+            <button className="btn btn-outline-danger me-2" onClick={fetchQuiz}>
+              Retry
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}>
+              Back to Quizzes
+            </button>
+          </div>
+        </div>
+        
+        {/* 🔍 Debug Info */}
+        <div className="mt-4 p-3 bg-light rounded">
+          <h6>Debug Information:</h6>
+          <p><strong>Course ID:</strong> {cid || 'MISSING'}</p>
+          <p><strong>Quiz ID:</strong> {quizId || 'MISSING'}</p>
+          <p><strong>Current URL:</strong> {window.location.href}</p>
+          <p><strong>Error:</strong> {error}</p>
         </div>
       </div>
     );
