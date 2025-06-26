@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../AuthContext";
-import { FaPlus, FaRocket } from "react-icons/fa";
+import { FaPlus, FaRocket, FaEdit, FaTrash, FaEye, FaSearch } from "react-icons/fa";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
 export default function QuizList() {
   const { state } = useAuth();
@@ -11,9 +12,12 @@ export default function QuizList() {
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showContextMenu, setShowContextMenu] = useState<string | null>(null);
   
   const isFaculty = state.user?.role === 'FACULTY' || state.user?.role === 'ADMIN';
-  
+  const isStudent = state.user?.role === 'STUDENT';
+
   const fetchQuizzes = async () => {
     if (!cid) return;
     
@@ -21,6 +25,7 @@ export default function QuizList() {
       setLoading(true);
       setError(null);
       
+      console.log("Fetching quizzes for course:", cid);
       const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`);
       
       if (!response.ok) {
@@ -43,6 +48,7 @@ export default function QuizList() {
     if (!cid) return;
     
     try {
+      console.log("Creating new quiz...");
       const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,8 +66,10 @@ export default function QuizList() {
       const newQuiz = await response.json();
       console.log("Created quiz:", newQuiz);
       
-      // Add to list and navigate to editor
-      setQuizzes([...quizzes, newQuiz]);
+      // Refresh the quiz list to show the new quiz
+      await fetchQuizzes();
+      
+      // Navigate to editor
       navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
       
     } catch (err: any) {
@@ -69,13 +77,101 @@ export default function QuizList() {
       alert('Failed to create quiz: ' + err.message);
     }
   };
-  
+
+  const togglePublish = async (quizId: string) => {
+    const quiz = quizzes.find(q => q._id === quizId);
+    if (!quiz) return;
+    
+    try {
+      console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
+      
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/publish`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ published: !quiz.published })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const updatedQuiz = await response.json();
+      console.log("Updated quiz:", updatedQuiz);
+      
+      // Update the quiz in the list
+      setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
+      
+    } catch (err: any) {
+      console.error('Error toggling publish:', err);
+      alert('Failed to update quiz: ' + err.message);
+    }
+    
+    setShowContextMenu(null);
+  };
+
+  const deleteQuiz = async (quizId: string) => {
+    if (!window.confirm('Are you sure you want to delete this quiz?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Remove from list
+      setQuizzes(quizzes.filter(q => q._id !== quizId));
+      
+    } catch (err: any) {
+      console.error('Error deleting quiz:', err);
+      alert('Failed to delete quiz: ' + err.message);
+    }
+    
+    setShowContextMenu(null);
+  };
+
+  const getAvailabilityStatus = (quiz: any) => {
+    const now = new Date();
+    const availableDate = quiz.availableDate ? new Date(quiz.availableDate) : null;
+    const availableUntil = quiz.availableUntil ? new Date(quiz.availableUntil) : null;
+    const dueDate = quiz.dueDate ? new Date(quiz.dueDate) : null;
+
+    if (!quiz.published && isStudent) {
+      return 'Not Published';
+    }
+
+    if (availableDate && now < availableDate) {
+      return `Not available until ${availableDate.toLocaleDateString()}`;
+    }
+
+    if (availableUntil && now > availableUntil) {
+      return 'Closed';
+    }
+
+    if (dueDate && now > dueDate) {
+      return 'Past Due';
+    }
+
+    return 'Available';
+  };
+
   // Auto-load quizzes when component mounts
   useEffect(() => {
     if (state.isAuthenticated && state.user && cid && !state.isLoading) {
       fetchQuizzes();
     }
   }, [cid, state.isAuthenticated, state.isLoading]);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowContextMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   
   if (state.isLoading) {
     return <div className="p-4">Loading...</div>;
@@ -92,6 +188,58 @@ export default function QuizList() {
       </div>
     );
   }
+
+  // Filter quizzes based on search and role
+  const filteredQuizzes = quizzes
+    .filter(quiz => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(quiz => {
+      // Students only see published quizzes
+      if (isStudent) return quiz.published;
+      return true; // Faculty see all
+    });
+
+  const ContextMenu = ({ quizId, quiz }: { quizId: string, quiz: any }) => (
+    <div 
+      className="dropdown-menu show position-absolute" 
+      style={{ zIndex: 1000, right: 0, top: '100%' }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button 
+        className="dropdown-item" 
+        onClick={() => {
+          navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/edit`);
+          setShowContextMenu(null);
+        }}
+      >
+        <FaEdit className="me-2" size={12} />
+        Edit
+      </button>
+      <button 
+        className="dropdown-item" 
+        onClick={() => togglePublish(quizId)}
+      >
+        {quiz.published ? '🚫' : '✅'} {quiz.published ? 'Unpublish' : 'Publish'}
+      </button>
+      <button 
+        className="dropdown-item" 
+        onClick={() => {
+          navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/preview`);
+          setShowContextMenu(null);
+        }}
+      >
+        <FaEye className="me-2" size={12} />
+        Preview
+      </button>
+      <div className="dropdown-divider"></div>
+      <button 
+        className="dropdown-item text-danger" 
+        onClick={() => deleteQuiz(quizId)}
+      >
+        <FaTrash className="me-2" size={12} />
+        Delete
+      </button>
+    </div>
+  );
   
   return (
     <div className="container-fluid px-4 py-3">
@@ -106,6 +254,32 @@ export default function QuizList() {
             Quiz
           </button>
         )}
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="position-relative" style={{ maxWidth: '350px' }}>
+          <FaSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={14} />
+          <input 
+            type="text" 
+            className="form-control ps-5 border rounded"
+            placeholder="Search for Quiz" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ fontSize: '14px' }}
+          />
+        </div>
+      </div>
+      
+      {/* Debug Info */}
+      <div className="mb-3">
+        <small className="text-muted">
+          Total quizzes: {quizzes.length} | Filtered: {filteredQuizzes.length} | 
+          User: {state.user.firstName} ({state.user.role}) | Course: {cid}
+        </small>
+        <button className="btn btn-sm btn-outline-secondary ms-2" onClick={fetchQuizzes}>
+          Refresh
+        </button>
       </div>
       
       {/* Error State */}
@@ -131,49 +305,130 @@ export default function QuizList() {
       {/* Quiz List */}
       {!loading && (
         <div className="bg-light rounded p-3">
-          <h6 className="mb-3">Assignment Quizzes</h6>
+          <div className="d-flex align-items-center mb-3">
+            <span className="me-2 text-dark cursor-pointer" style={{ fontSize: '12px', cursor: 'pointer' }}>
+              ▼
+            </span>
+            <h6 className="mb-0 fw-semibold text-dark" style={{ fontSize: '15px' }}>
+              Assignment Quizzes
+            </h6>
+          </div>
           
-          {quizzes.length === 0 ? (
+          {filteredQuizzes.length === 0 ? (
             <div className="text-center py-4 text-muted">
               <FaRocket size={32} className="mb-2 opacity-50" />
-              <p className="mb-2">
-                {isFaculty ? "No quizzes created yet" : "No quizzes available yet"}
-              </p>
-              {isFaculty && (
-                <button className="btn btn-primary btn-sm" onClick={createQuiz}>
-                  <FaPlus className="me-1" size={12} />
-                  Create Your First Quiz
-                </button>
+              {searchTerm ? (
+                <>
+                  <p className="mb-2">No quizzes found matching "{searchTerm}"</p>
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    Clear Search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2">
+                    {isFaculty ? "No quizzes created yet" : "No quizzes available yet"}
+                  </p>
+                  {isFaculty && (
+                    <button className="btn btn-primary btn-sm" onClick={createQuiz}>
+                      <FaPlus className="me-1" size={12} />
+                      Create Your First Quiz
+                    </button>
+                  )}
+                </>
               )}
             </div>
           ) : (
             <div>
-              {quizzes.map(quiz => (
-                <div key={quiz._id} className="border-bottom py-3">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center mb-1">
-                        {quiz.published ? '✅' : '🚫'}
-                        <button
-                          className="btn btn-link p-0 ms-2 text-primary fw-semibold text-decoration-none"
-                          onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`)}
-                        >
-                          {quiz.title}
-                        </button>
-                      </div>
-                      <small className="text-muted">
-                        {quiz.points || 0} pts | {quiz.questions?.length || 0} questions
-                        {quiz.published ? ' | Published' : ' | Unpublished'}
-                      </small>
+              {filteredQuizzes.map((quiz, index) => (
+                <div 
+                  key={quiz._id} 
+                  className={`list-group-item border-0 px-0 py-3 ${index !== filteredQuizzes.length - 1 ? 'border-bottom' : ''}`}
+                  style={{ backgroundColor: 'transparent' }}
+                >
+                  <div className="d-flex align-items-start">
+                    <div className="me-3 mt-1">
+                      <FaRocket className="text-secondary" size={16} />
                     </div>
-                    {isFaculty && (
-                      <button 
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/edit`)}
-                      >
-                        Edit
-                      </button>
-                    )}
+                    
+                    <div className="flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-start mb-1">
+                        <div className="d-flex align-items-center">
+                          {/* Publish Status Icon - Faculty Only */}
+                          {isFaculty && (
+                            <button
+                              className="btn btn-link p-0 me-2"
+                              onClick={() => togglePublish(quiz._id)}
+                              title={quiz.published ? 'Published - Click to unpublish' : 'Unpublished - Click to publish'}
+                            >
+                              {quiz.published ? '✅' : '🚫'}
+                            </button>
+                          )}
+                          
+                          {/* Quiz Title */}
+                          <button
+                            className="btn btn-link p-0 text-primary fw-semibold text-decoration-none"
+                            style={{ fontSize: '15px' }}
+                            onClick={() => {
+                              if (isFaculty) {
+                                navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}`);
+                              } else {
+                                navigate(`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/take`);
+                              }
+                            }}
+                          >
+                            {quiz.title}
+                          </button>
+                        </div>
+                        
+                        {/* Context Menu - Faculty Only */}
+                        {isFaculty && (
+                          <div className="position-relative">
+                            <button
+                              className="btn btn-link p-0 text-muted"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowContextMenu(showContextMenu === quiz._id ? null : quiz._id);
+                              }}
+                            >
+                              <BsThreeDotsVertical size={14} />
+                            </button>
+                            {showContextMenu === quiz._id && (
+                              <ContextMenu quizId={quiz._id} quiz={quiz} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="text-muted" style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                        {/* Availability Status */}
+                        <span className="fw-medium">{getAvailabilityStatus(quiz)}</span>
+                        
+                        {/* Due Date */}
+                        {quiz.dueDate && (
+                          <span> | Due {new Date(quiz.dueDate).toLocaleDateString()}</span>
+                        )}
+                        
+                        {/* Points */}
+                        <span> | {quiz.points || 0} pts</span>
+                        
+                        {/* Number of Questions */}
+                        <span> | {quiz.questions?.length || 0} Questions</span>
+                        
+                        {/* Show student's score if they're a student */}
+                        {isStudent && quiz.userScore !== undefined && (
+                          <span> | <strong>Score: {quiz.userScore}/{quiz.points}</strong></span>
+                        )}
+                        
+                        {/* Show publish status for faculty */}
+                        {isFaculty && !quiz.published && (
+                          <span> | <span className="text-warning">⚠️ Unpublished</span></span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
