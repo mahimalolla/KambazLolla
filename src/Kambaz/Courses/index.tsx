@@ -1,5 +1,5 @@
 import { FaAlignJustify } from "react-icons/fa6";
-import { Navigate, Route, Routes, useParams, useLocation } from "react-router";
+import { Navigate, Route, Routes, useParams, useLocation } from "react-router-dom"; 
 import CourseNavigation from "./Navigation";
 import Home from "./Home";
 import Modules from "./Modules";
@@ -11,15 +11,22 @@ import PiazzaDiscussions from "./Piazza";
 import Zoom from "./Zoom";
 import Quizzes from "./Quizzes";
 import QuizDetails from "./Quizzes/details";
-import QuizEditor from "./Quizzes/Editor";
+import QuizEditor from "./Quizzes/Editor"; 
 import QuizTaking from "./Quizzes/quiz";
 import QuizResults from "./Quizzes/results";
 import QuizPreview from "./Quizzes/preview";
 
 export default function Courses({ courses }: { courses: any[] }) {
   const { cid } = useParams();
-  const course = courses.find((course: { _id: string | undefined; }) => course._id === cid);
+  const course = courses.find((course: { _id: string | undefined; }) => course._id === cid); // 🔧 FIX: _id not *id
   const { pathname } = useLocation();
+  
+  console.log('🎯 Courses component loaded:', { 
+    cid, 
+    courseFound: !!course,
+    pathname,
+    coursesLength: courses.length 
+  });
   
   return (
     <div id="wd-courses">
@@ -78,7 +85,7 @@ export default function Courses({ courses }: { courses: any[] }) {
             <Route path="Assignments/editor" element={<AssignmentEditor />} />
             <Route path="Assignments/:aid/editor" element={<AssignmentEditor />} />
             
-            {/* 👈 ADD ALL THESE QUIZ ROUTES */}
+            {/* 🔧 Quiz Routes - Check console for debugging */}
             <Route path="Quizzes" element={<Quizzes />} />
             <Route path="Quizzes/:quizId" element={<QuizDetails />} />
             <Route path="Quizzes/:quizId/edit" element={<QuizEditor />} />
@@ -88,6 +95,25 @@ export default function Courses({ courses }: { courses: any[] }) {
             
             <Route path="Grades" element={<Grades />} />
             <Route path="People" element={<People />} />
+            
+            {/* 🔧 ADD: 404 handler for debugging */}
+            <Route 
+              path="*" 
+              element={
+                <div className="alert alert-warning">
+                  <h4>Route Not Found</h4>
+                  <p><strong>Current Path:</strong> {pathname}</p>
+                  <p><strong>Course ID:</strong> {cid}</p>
+                  <p><strong>Available Routes:</strong></p>
+                  <ul>
+                    <li>Quizzes</li>
+                    <li>Quizzes/:quizId</li>
+                    <li>Quizzes/:quizId/edit</li>
+                    <li>Quizzes/:quizId/take</li>
+                  </ul>
+                </div>
+              } 
+            />
           </Routes>
         </div>
       </div>
