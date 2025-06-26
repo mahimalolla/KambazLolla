@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTimes, FaQuestionCircle, FaCog, FaCalendarAlt, FaEye, FaClock, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 
 interface Question {
@@ -13,37 +14,184 @@ interface Question {
 }
 
 export default function QuizEditor() {
-  const qid = "Q1"; // Replace with useParams()
-  const [activeTab, setActiveTab] = useState<'details' | 'questions'>('details');
+  const { cid, quizId } = useParams(); // Get course ID and quiz ID from URL
+  const navigate = useNavigate();
   
-  // Quiz details state (your existing state)
+  const [activeTab, setActiveTab] = useState<'details' | 'questions'>('details');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Quiz details state
   const [quiz, setQuiz] = useState({
-    title: `Quiz ${qid}`,
-    description: "",
-    quizType: "Graded Quiz",
+    _id: '',
+    title: 'New Quiz',
+    description: '',
+    quizType: 'Graded Quiz',
     points: 0,
-    assignmentGroup: "Quizzes",
+    assignmentGroup: 'Quizzes',
     shuffleAnswers: true,
     timeLimit: 20,
     multipleAttempts: false,
     attemptLimit: 1,
-    showCorrectAnswers: "Immediately",
-    accessCode: "",
+    showCorrectAnswers: 'Immediately',
+    accessCode: '',
     oneQuestionAtATime: true,
     webcamRequired: false,
     lockQuestionsAfterAnswering: false,
-    due: "2025-06-02",
-    dueTime: "23:59",
-    availableFrom: "2025-05-20",
-    availableFromTime: "00:00",
-    availableUntil: "2025-06-02",
-    availableUntilTime: "23:59"
+    dueDate: '',
+    availableDate: '',
+    availableUntil: '',
+    published: false,
+    questions: []
   });
 
-  // Questions state (NEW)
+  // Questions state
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
+
+  // Fetch quiz data when component loads
+  useEffect(() => {
+    if (quizId && cid) {
+      fetchQuiz();
+    }
+  }, [quizId, cid]);
+
+  const fetchQuiz = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Fetched quiz:', data);
+      
+      setQuiz(data);
+      setQuestions(data.questions || []);
+      
+    } catch (err: any) {
+      console.error('Error fetching quiz:', err);
+      setError('Failed to load quiz');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveQuiz = async (publish = false) => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const quizData = {
+        ...quiz,
+        questions,
+        points: questions.reduce((sum, q) => sum + q.points, 0),
+        published: publish || quiz.published
+      };
+      
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quizData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const updatedQuiz = await response.json();
+      console.log('Saved quiz:', updatedQuiz);
+      
+      setQuiz(updatedQuiz);
+      
+      if (publish) {
+        alert('Quiz saved and published successfully!');
+      } else {
+        alert('Quiz saved successfully!');
+      }
+      
+    } catch (err: any) {
+      console.error('Error saving quiz:', err);
+      setError('Failed to save quiz');
+      alert('Failed to save quiz: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveQuestion = async () => {
+    if (!editingQuestion) return;
+    
+    try {
+      const isNewQuestion = editingQuestion._id.startsWith('q_');
+      
+      if (isNewQuestion) {
+        // Create new question
+        const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingQuestion)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const newQuestion = await response.json();
+        setQuestions([...questions, newQuestion]);
+        
+      } else {
+        // Update existing question
+        const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${editingQuestion._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingQuestion)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const updatedQuestion = await response.json();
+        setQuestions(questions.map(q => q._id === editingQuestion._id ? updatedQuestion : q));
+      }
+      
+      setEditingQuestion(null);
+      setIsEditingQuestion(false);
+      
+    } catch (err: any) {
+      console.error('Error saving question:', err);
+      alert('Failed to save question: ' + err.message);
+    }
+  };
+
+  const deleteQuestion = async (questionId: string) => {
+    if (!window.confirm('Are you sure you want to delete this question?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${questionId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      setQuestions(questions.filter(q => q._id !== questionId));
+      
+    } catch (err: any) {
+      console.error('Error deleting question:', err);
+      alert('Failed to delete question: ' + err.message);
+    }
+  };
 
   const handleInputChange = (field: string, value: any) => {
     setQuiz(prev => ({
@@ -52,7 +200,6 @@ export default function QuizEditor() {
     }));
   };
 
-  // Question handling functions (NEW)
   const addNewQuestion = () => {
     const newQuestion: Question = {
       _id: `q_${Date.now()}`,
@@ -67,38 +214,42 @@ export default function QuizEditor() {
     setIsEditingQuestion(true);
   };
 
-  const saveQuestion = () => {
-    if (editingQuestion) {
-      const existingIndex = questions.findIndex(q => q._id === editingQuestion._id);
-      if (existingIndex >= 0) {
-        const updated = [...questions];
-        updated[existingIndex] = editingQuestion;
-        setQuestions(updated);
-      } else {
-        setQuestions([...questions, editingQuestion]);
-      }
-      setEditingQuestion(null);
-      setIsEditingQuestion(false);
-      
-      // Update total points
-      const totalPoints = [...questions, editingQuestion].reduce((sum, q) => sum + q.points, 0);
-      setQuiz(prev => ({ ...prev, points: totalPoints }));
-    }
-  };
-
-  const deleteQuestion = (questionId: string) => {
-    setQuestions(questions.filter(q => q._id !== questionId));
-    const remainingQuestions = questions.filter(q => q._id !== questionId);
-    const totalPoints = remainingQuestions.reduce((sum, q) => sum + q.points, 0);
-    setQuiz(prev => ({ ...prev, points: totalPoints }));
-  };
-
   const editQuestion = (question: Question) => {
     setEditingQuestion({ ...question });
     setIsEditingQuestion(true);
   };
 
   const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+
+  if (loading) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading quiz...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container-fluid px-4 py-3">
+        <div className="alert alert-danger">
+          <h5>Error Loading Quiz</h5>
+          <p>{error}</p>
+          <button className="btn btn-outline-danger" onClick={fetchQuiz}>
+            Retry
+          </button>
+          <button className="btn btn-secondary ms-2" onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}>
+            Back to Quizzes
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const renderQuestionEditor = () => {
     if (!editingQuestion) return null;
@@ -320,26 +471,36 @@ export default function QuizEditor() {
         <div>
           <h4 className="mb-1 fw-bold">Edit Quiz</h4>
           <p className="text-muted mb-0" style={{ fontSize: '14px' }}>
-            Quiz ID: {qid}
+            {quiz.title} (ID: {quizId})
           </p>
         </div>
         <div className="d-flex gap-2">
-          <button className="btn btn-outline-secondary btn-sm">
+          <button 
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/preview`)}
+          >
             <FaEye className="me-1" size={12} />
             Preview
           </button>
-          <button className="btn btn-outline-secondary btn-sm">
+          <button 
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
+          >
             <FaTimes className="me-1" size={12} />
             Cancel
           </button>
-          <button className="btn btn-success btn-sm">
+          <button 
+            className="btn btn-success btn-sm" 
+            onClick={() => saveQuiz(false)}
+            disabled={saving}
+          >
             <FaSave className="me-1" size={12} />
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
 
-      {/* Tabs Navigation (NEW) */}
+      {/* Tabs Navigation */}
       <div className="mb-4">
         <ul className="nav nav-tabs">
           <li className="nav-item">
@@ -361,7 +522,7 @@ export default function QuizEditor() {
         </ul>
       </div>
 
-      {/* Details Tab Content (Your existing content) */}
+      {/* Details Tab Content */}
       {activeTab === 'details' && (
         <div className="row">
           {/* Main Content */}
@@ -458,6 +619,7 @@ export default function QuizEditor() {
                     <label className="form-label fw-semibold">Multiple Attempts</label>
                     <select 
                       className="form-select"
+                      value={quiz.multipleAttempts.toString()}
                       onChange={(e) => handleInputChange('multipleAttempts', e.target.value === 'true')}
                     >
                       <option value="false">No</option>
@@ -543,13 +705,22 @@ export default function QuizEditor() {
                     style={{ backgroundColor: '#f8f9fa' }}
                   />
                 </div>
+
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Status</label>
+                  <div className="d-flex align-items-center">
+                    <span className={`badge ${quiz.published ? 'bg-success' : 'bg-warning'}`}>
+                      {quiz.published ? 'Published' : 'Unpublished'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Questions Tab Content (NEW) */}
+      {/* Questions Tab Content */}
       {activeTab === 'questions' && (
         <div className="row">
           <div className="col-12">
@@ -626,9 +797,26 @@ export default function QuizEditor() {
 
       {/* Bottom Actions */}
       <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-        <button className="btn btn-outline-secondary">Cancel</button>
-        <button className="btn btn-outline-primary">Save & Publish</button>
-        <button className="btn btn-success">Save</button>
+        <button 
+          className="btn btn-outline-secondary"
+          onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
+        >
+          Cancel
+        </button>
+        <button 
+          className="btn btn-outline-primary"
+          onClick={() => saveQuiz(true)}
+          disabled={saving}
+        >
+          Save & Publish
+        </button>
+        <button 
+          className="btn btn-success"
+          onClick={() => saveQuiz(false)}
+          disabled={saving}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
       </div>
     </div>
   );
