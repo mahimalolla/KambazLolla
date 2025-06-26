@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 export default function QuizPreview() {
   const { cid, quizId } = useParams();
@@ -9,6 +9,7 @@ export default function QuizPreview() {
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // NEW: Current question tracking
 
   useEffect(() => {
     fetchQuiz();
@@ -43,6 +44,21 @@ export default function QuizPreview() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // NEW: Navigation functions
+  const goToPreviousQuestion = () => {
+    setCurrentQuestionIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const goToNextQuestion = () => {
+    if (quiz && quiz.questions) {
+      setCurrentQuestionIndex(prev => Math.min(quiz.questions.length - 1, prev + 1));
+    }
+  };
+
+  const jumpToQuestion = (index: number) => {
+    setCurrentQuestionIndex(index);
   };
 
   if (loading) {
@@ -88,6 +104,8 @@ export default function QuizPreview() {
       </div>
     );
   }
+
+  const currentQuestion = quiz.questions && quiz.questions[currentQuestionIndex];
 
   return (
     <div className="container-fluid px-4 py-3">
@@ -179,29 +197,131 @@ export default function QuizPreview() {
                 </div>
               </div>
 
-              {/* Quiz Questions Preview */}
-              {quiz.questions && quiz.questions.length > 0 && (
+              {/* NEW: Question Preview with Navigation */}
+              {quiz.questions && quiz.questions.length > 0 ? (
                 <div className="text-start">
-                  <h6 className="mb-3">Questions Preview:</h6>
-                  {quiz.questions.map((question: any, index: number) => (
-                    <div key={question._id} className="border rounded p-3 mb-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h6 className="mb-0">Question {index + 1}: {question.title}</h6>
-                        <span className="badge bg-primary">{question.points} pts</span>
+                  {/* Question Navigation Header */}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Questions Preview:</h6>
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="small text-muted">
+                        Question {currentQuestionIndex + 1} of {quiz.questions.length}
+                      </span>
+                      
+                      {/* Question Number Pills */}
+                      <div className="d-flex gap-1">
+                        {quiz.questions.map((_: any, index: number) => (
+                          <button
+                            key={index}
+                            className={`btn btn-sm ${
+                              index === currentQuestionIndex 
+                                ? 'btn-primary' 
+                                : 'btn-outline-secondary'
+                            }`}
+                            onClick={() => jumpToQuestion(index)}
+                            style={{ width: '35px', height: '35px' }}
+                          >
+                            {index + 1}
+                          </button>
+                        ))}
                       </div>
-                      <p className="text-muted small">{question.question}</p>
-                      <small className="text-info">
-                        Type: {question.type.replace('-', ' ')}
-                        {question.type === 'multiple-choice' && question.choices && 
-                          ` (${question.choices.length} choices)`
-                        }
+                    </div>
+                  </div>
+
+                  {/* Current Question Display */}
+                  {currentQuestion && (
+                    <div className="border rounded p-4 mb-3">
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <h6 className="mb-0">Question {currentQuestionIndex + 1}: {currentQuestion.title}</h6>
+                        <span className="badge bg-primary">{currentQuestion.points} pts</span>
+                      </div>
+                      <p className="mb-3">{currentQuestion.question}</p>
+                      
+                      {/* Question Type Specific Preview */}
+                      {currentQuestion.type === 'multiple-choice' && currentQuestion.choices && (
+                        <div>
+                          <h6 className="small text-muted mb-2">Answer Choices:</h6>
+                          {currentQuestion.choices.map((choice: string, index: number) => (
+                            <div key={index} className="form-check mb-2">
+                              <input
+                                className="form-check-input"
+                                type="radio"
+                                disabled
+                                name={`preview_${currentQuestion._id}`}
+                              />
+                              <label className="form-check-label">
+                                {choice || `Choice ${index + 1}`}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {currentQuestion.type === 'true-false' && (
+                        <div>
+                          <h6 className="small text-muted mb-2">Answer Options:</h6>
+                          <div className="form-check mb-2">
+                            <input className="form-check-input" type="radio" disabled />
+                            <label className="form-check-label">True</label>
+                          </div>
+                          <div className="form-check">
+                            <input className="form-check-input" type="radio" disabled />
+                            <label className="form-check-label">False</label>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentQuestion.type === 'fill-blank' && (
+                        <div>
+                          <h6 className="small text-muted mb-2">Fill in the Blank:</h6>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="Student answer goes here..." 
+                            disabled 
+                          />
+                          {currentQuestion.possibleAnswers && (
+                            <small className="text-muted mt-1 d-block">
+                              Accepted answers: {currentQuestion.possibleAnswers.join(', ')}
+                            </small>
+                          )}
+                        </div>
+                      )}
+
+                      <small className="text-info d-block mt-3">
+                        Type: {currentQuestion.type.replace('-', ' ')} | Points: {currentQuestion.points}
                       </small>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {(!quiz.questions || quiz.questions.length === 0) && (
+                  {/* Navigation Controls */}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={goToPreviousQuestion}
+                      disabled={currentQuestionIndex === 0}
+                    >
+                      <FaChevronLeft className="me-1" />
+                      Previous Question
+                    </button>
+
+                    <div className="text-center">
+                      <small className="text-muted">
+                        Navigate between questions to preview the student experience
+                      </small>
+                    </div>
+
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={goToNextQuestion}
+                      disabled={!quiz.questions || currentQuestionIndex === quiz.questions.length - 1}
+                    >
+                      Next Question
+                      <FaChevronRight className="ms-1" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <div className="alert alert-warning">
                   <h6>No Questions Yet</h6>
                   <p className="mb-0">This quiz doesn't have any questions. Add questions in the editor to see the preview.</p>
