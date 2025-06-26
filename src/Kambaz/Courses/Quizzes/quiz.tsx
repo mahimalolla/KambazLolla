@@ -55,6 +55,37 @@ export default function QuizTaking() {
   const isFaculty = state.user?.role === 'FACULTY' || state.user?.role === 'ADMIN';
   const isPreview = isFaculty; // Faculty can preview, students take for real
 
+  // NEW: Check if quiz is available based on dates
+  const checkQuizAvailability = (quiz: Quiz) => {
+    if (!isStudent) return { canTake: true, reason: '' }; // Faculty can always preview
+
+    const now = new Date();
+    const availableDate = quiz.availableDate ? new Date(quiz.availableDate) : null;
+    const availableUntil = quiz.availableUntil ? new Date(quiz.availableUntil) : null;
+    const dueDate = quiz.dueDate ? new Date(quiz.dueDate) : null;
+
+    if (!quiz.published) {
+      return { canTake: false, reason: 'This quiz is not published yet.' };
+    }
+
+    if (availableDate && now < availableDate) {
+      return { 
+        canTake: false, 
+        reason: `This quiz is not available until ${availableDate.toLocaleDateString()} at ${availableDate.toLocaleTimeString()}.` 
+      };
+    }
+
+    if (availableUntil && now > availableUntil) {
+      return { canTake: false, reason: 'This quiz is closed and no longer available.' };
+    }
+
+    if (dueDate && now > dueDate) {
+      return { canTake: false, reason: 'This quiz is past due and can no longer be taken.' };
+    }
+
+    return { canTake: true, reason: '' };
+  };
+
   // Fetch quiz and user attempts when component loads
   useEffect(() => {
     if (quizId && cid && state.user) {
@@ -91,10 +122,12 @@ export default function QuizTaking() {
       const data = await response.json();
       console.log('Fetched quiz for taking:', data);
       
-      // Check if student can access this quiz
-      if (isStudent && !data.published) {
-        setError('This quiz is not published yet.');
+      // NEW: Check quiz availability
+      const availability = checkQuizAvailability(data);
+      if (!availability.canTake) {
+        setError(availability.reason);
         setCanTakeQuiz(false);
+        setQuiz(data); // Still set quiz for display purposes
         return;
       }
       
@@ -133,6 +166,12 @@ export default function QuizTaking() {
   };
 
   const startQuiz = () => {
+    // Double-check availability before starting
+    if (quiz && !checkQuizAvailability(quiz).canTake) {
+      setError('Quiz is no longer available.');
+      return;
+    }
+    
     setQuizStarted(true);
     if (quiz) {
       setTimeRemaining(quiz.timeLimit * 60);
