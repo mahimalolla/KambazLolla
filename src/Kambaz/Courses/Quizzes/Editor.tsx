@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTimes, FaQuestionCircle, FaCog, FaCalendarAlt, FaEye, FaClock, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import * as quizClient from './client';
 
 interface Question {
   _id: string;
@@ -70,25 +71,15 @@ export default function QuizEditor() {
     }
   }, [quizId, cid]);
 
+  // 🔧 UPDATED: fetchQuiz function using client
   const fetchQuiz = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`;
-      console.log('📡 Fetching quiz from URL:', url);
+      console.log('🔍 Fetching quiz using client:', { cid, quizId });
       
-      const response = await fetch(url);
-      
-      console.log('📊 Fetch response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Fetch failed:', { status: response.status, error: errorText });
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-      
-      const data = await response.json();
+      const data = await quizClient.findQuizById(cid!, quizId!);
       console.log('✅ Fetched quiz successfully:', {
         id: data._id,
         title: data.title,
@@ -115,22 +106,20 @@ export default function QuizEditor() {
     }
   };
 
-  // 🔧 FIXED: Enhanced saveQuiz function with debugging
+  // 🔧 UPDATED: saveQuiz function using client
   const saveQuiz = async (publish = false) => {
     try {
       setSaving(true);
       setError(null);
       
-      // 🔍 Debug: Check parameters
-      console.log('💾 Starting saveQuiz with params:', { cid, quizId, publish });
+      console.log('💾 Starting saveQuiz using client:', { cid, quizId, publish });
       
       if (!cid || !quizId) {
         throw new Error(`Missing required parameters: cid=${cid}, quizId=${quizId}`);
       }
       
-      // 🔧 FIXED: Create clean quiz data without circular references
+      // 🔧 Create clean quiz data
       const quizData = {
-        // Only include the fields we want to save
         title: quiz.title,
         description: quiz.description,
         quizType: quiz.quizType,
@@ -163,31 +152,7 @@ export default function QuizEditor() {
         points: quizData.points
       });
       
-      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`;
-      console.log('📡 Save URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(quizData)
-      });
-      
-      console.log('📊 Save response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Save failed:', { 
-          status: response.status, 
-          statusText: response.statusText,
-          error: errorText 
-        });
-        throw new Error(`Save failed with status ${response.status}: ${errorText}`);
-      }
-      
-      const updatedQuiz = await response.json();
+      const updatedQuiz = await quizClient.updateQuiz(cid, quizId, quizData);
       console.log('✅ Quiz saved successfully:', {
         id: updatedQuiz._id,
         title: updatedQuiz.title,
@@ -223,7 +188,7 @@ export default function QuizEditor() {
     }
   };
 
-  // 🔧 FIXED: Enhanced saveQuestion function with debugging
+  // 🔧 UPDATED: saveQuestion function using client
   const saveQuestion = async () => {
     if (!editingQuestion) {
       console.log('❌ No question to save');
@@ -231,7 +196,7 @@ export default function QuizEditor() {
     }
     
     try {
-      console.log('💾 Starting saveQuestion:', {
+      console.log('💾 Starting saveQuestion using client:', {
         questionId: editingQuestion._id,
         isNew: editingQuestion._id.startsWith('q_'),
         type: editingQuestion.type,
@@ -265,61 +230,15 @@ export default function QuizEditor() {
       console.log('📝 Question data to save:', questionData);
       
       if (isNewQuestion) {
-        // Create new question
-        const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions`;
-        console.log('📡 POST question to URL:', url);
-        
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(questionData)
-        });
-        
-        console.log('📊 Create question response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Create question failed:', { 
-            status: response.status, 
-            error: errorText 
-          });
-          throw new Error(`Create question failed with status ${response.status}: ${errorText}`);
-        }
-        
-        const newQuestion = await response.json();
+        // Create new question using client
+        const newQuestion = await quizClient.addQuestion(cid, quizId, questionData);
         console.log('✅ Question created successfully:', newQuestion._id);
         
         setQuestions([...questions, newQuestion]);
         
       } else {
-        // Update existing question
-        const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${editingQuestion._id}`;
-        console.log('📡 PUT question to URL:', url);
-        
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(questionData)
-        });
-        
-        console.log('📊 Update question response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Update question failed:', { 
-            status: response.status, 
-            error: errorText 
-          });
-          throw new Error(`Update question failed with status ${response.status}: ${errorText}`);
-        }
-        
-        const updatedQuestion = await response.json();
+        // Update existing question using client
+        const updatedQuestion = await quizClient.updateQuestion(cid, quizId, editingQuestion._id, questionData);
         console.log('✅ Question updated successfully:', updatedQuestion._id);
         
         setQuestions(questions.map(q => 
@@ -338,38 +257,22 @@ export default function QuizEditor() {
     }
   };
 
-  // 🔧 FIXED: Enhanced deleteQuestion function with debugging
+  // 🔧 UPDATED: deleteQuestion function using client
   const deleteQuestion = async (questionId: string) => {
     if (!window.confirm('Are you sure you want to delete this question?')) {
       return;
     }
     
     try {
-      console.log('🗑️ Deleting question:', questionId);
+      console.log('🗑️ Deleting question using client:', questionId);
       
       if (!cid || !quizId) {
         throw new Error(`Missing required parameters: cid=${cid}, quizId=${quizId}`);
       }
       
-      const url = `https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/questions/${questionId}`;
-      console.log('📡 DELETE question URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'DELETE'
-      });
-      
-      console.log('📊 Delete question response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Delete question failed:', { 
-          status: response.status, 
-          error: errorText 
-        });
-        throw new Error(`Delete question failed with status ${response.status}: ${errorText}`);
-      }
-      
+      await quizClient.deleteQuestion(cid, quizId, questionId);
       console.log('✅ Question deleted successfully');
+      
       setQuestions(questions.filter(q => q._id !== questionId));
       alert('Question deleted successfully!');
       
