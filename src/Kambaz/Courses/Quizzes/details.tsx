@@ -36,7 +36,7 @@ interface QuizAttempt {
 }
 
 export default function QuizDetails() {
-  const { courseId, quizId } = useParams();
+  const { cid, quizId } = useParams();
   const navigate = useNavigate();
   const { state } = useAuth();
   
@@ -55,11 +55,11 @@ export default function QuizDetails() {
     if (isStudent) {
       fetchUserAttempts();
     }
-  }, [quizId, courseId]);
+  }, [quizId, cid]);
 
   const fetchQuizDetails = async () => {
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}`);
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched quiz details:', data);
@@ -77,7 +77,7 @@ export default function QuizDetails() {
 
   const fetchUserAttempts = async () => {
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}/attempts/${state.user._id}`);
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/attempts/${state.user._id}`);
       if (response.ok) {
         const data = await response.json();
         setUserAttempts(data);
@@ -97,7 +97,7 @@ export default function QuizDetails() {
         published: !quiz.published
       };
       
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}`, {
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedQuizData)
@@ -141,7 +141,7 @@ export default function QuizDetails() {
             </button>
             <button 
               className="btn btn-secondary btn-sm" 
-              onClick={() => navigate(`/Kambaz/Courses/${courseId}/Quizzes`)}
+              onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
             >
               Back to Quizzes
             </button>
@@ -196,15 +196,15 @@ export default function QuizDetails() {
       return;
     }
 
-    navigate(`/Kambaz/Courses/${courseId}/Quizzes/${quizId}/take`);
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/take`);
   };
 
   const handleEditQuiz = () => {
-    navigate(`/Kambaz/Courses/${courseId}/Quizzes/${quizId}/edit`);
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/edit`);
   };
 
   const handlePreviewQuiz = () => {
-    navigate(`/Kambaz/Courses/${courseId}/Quizzes/${quizId}/preview`);
+    navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/preview`);
   };
 
   return (
@@ -437,7 +437,7 @@ export default function QuizDetails() {
                   <div className="mt-3">
                     <button 
                       className="btn btn-outline-primary btn-sm"
-                      onClick={() => navigate(`/Kambaz/Courses/${courseId}/Quizzes/${quizId}/results`)}
+                      onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/results`)}
                     >
                       View All Attempts
                     </button>
@@ -465,7 +465,7 @@ export default function QuizDetails() {
                   {lastAttempt && (
                     <button 
                       className="btn btn-outline-primary btn-sm w-100 mb-2"
-                      onClick={() => navigate(`/Kambaz/Courses/${courseId}/Quizzes/${quizId}/results`)}
+                      onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/results`)}
                     >
                       View Results
                     </button>
@@ -488,7 +488,7 @@ export default function QuizDetails() {
 
               <button 
                 className="btn btn-outline-secondary btn-sm w-100 mt-2"
-                onClick={() => navigate(`/Kambaz/Courses/${courseId}/Quizzes`)}
+                onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
               >
                 Back to Quizzes
               </button>
