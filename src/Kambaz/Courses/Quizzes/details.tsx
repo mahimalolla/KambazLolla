@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaPlay, FaEdit, FaEye, FaClock, FaQuestion, FaCalendarAlt, FaTrophy, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlay, FaEdit, FaEye, FaClock, FaQuestion, FaCalendarAlt, FaTrophy, FaExclamationTriangle, FaRocket } from 'react-icons/fa';
 import { useAuth } from '../../../AuthContext';
 
 interface Quiz {
@@ -59,7 +59,6 @@ export default function QuizDetails() {
 
   const fetchQuizDetails = async () => {
     try {
-      // 👈 FIXED: Added full server URL
       const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}`);
       if (response.ok) {
         const data = await response.json();
@@ -78,7 +77,6 @@ export default function QuizDetails() {
 
   const fetchUserAttempts = async () => {
     try {
-      // 👈 FIXED: Added full server URL
       const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}/attempts/${state.user._id}`);
       if (response.ok) {
         const data = await response.json();
@@ -86,6 +84,35 @@ export default function QuizDetails() {
       }
     } catch (error) {
       console.error('Error fetching attempts:', error);
+    }
+  };
+
+  // NEW: Toggle publish/unpublish function
+  const togglePublish = async () => {
+    if (!quiz) return;
+    
+    try {
+      const updatedQuizData = {
+        ...quiz,
+        published: !quiz.published
+      };
+      
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedQuizData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const updatedQuiz = await response.json();
+      setQuiz(updatedQuiz);
+      
+    } catch (err: any) {
+      console.error('Error toggling publish:', err);
+      alert('Failed to update quiz: ' + err.message);
     }
   };
 
@@ -192,6 +219,15 @@ export default function QuizDetails() {
         <div className="d-flex gap-2">
           {isFaculty && (
             <>
+              {/* NEW: Publish/Unpublish Button */}
+              <button 
+                className={`btn ${quiz.published ? 'btn-warning' : 'btn-success'}`}
+                onClick={togglePublish}
+              >
+                <FaRocket className="me-1" size={12} />
+                {quiz.published ? 'Unpublish' : 'Publish'}
+              </button>
+              
               <button className="btn btn-outline-secondary" onClick={handlePreviewQuiz}>
                 <FaEye className="me-1" size={12} />
                 Preview
