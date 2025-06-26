@@ -93,10 +93,6 @@ export let enrollments = [
   { _id: "12", user: "126", course: "RS102" }, // Alice W enrolled in Software Engineering
 ];
 
-// 👈 ADD THESE QUIZ DATA STRUCTURES
-export let quizzes: any[] = [];
-export let quizAttempts: any[] = [];
-
 // Make the imported data mutable for CRUD operations
 export let coursesData = [...courses];
 export let modulesData = [...modules];
