@@ -89,10 +89,14 @@ export default function QuizTaking() {
   // Fetch quiz and user attempts when component loads
   useEffect(() => {
     if (quizId && cid && state.user) {
-      fetchQuiz();
-      if (isStudent) {
-        fetchUserAttempts();
-      }
+      const loadQuizData = async () => {
+        await fetchQuiz();
+        if (isStudent) {
+          // Fetch attempts after quiz is loaded
+          setTimeout(() => fetchUserAttempts(), 100);
+        }
+      };
+      loadQuizData();
     }
   }, [quizId, cid, state.user]);
 
@@ -151,14 +155,22 @@ export default function QuizTaking() {
         console.log('User attempts:', attempts);
         setUserAttempts(attempts);
         
-        // Check if user can still take the quiz
+        // Check if user can still take the quiz - FIXED LOGIC
         if (quiz && !quiz.multipleAttempts && attempts.length > 0) {
           setCanTakeQuiz(false);
           setError('You have already taken this quiz. Multiple attempts are not allowed.');
-        } else if (quiz && quiz.multipleAttempts && attempts.length >= quiz.attemptLimit) {
+          return; // Early return to prevent further checks
+        } 
+        
+        if (quiz && quiz.multipleAttempts && attempts.length >= quiz.attemptLimit) {
           setCanTakeQuiz(false);
           setError(`You have exhausted all ${quiz.attemptLimit} attempts for this quiz.`);
+          return; // Early return to prevent further checks
         }
+
+        // If we get here, user can still take the quiz
+        setCanTakeQuiz(true);
+        setError(null);
       }
     } catch (err: any) {
       console.error('Error fetching user attempts:', err);
@@ -170,6 +182,19 @@ export default function QuizTaking() {
     if (quiz && !checkQuizAvailability(quiz).canTake) {
       setError('Quiz is no longer available.');
       return;
+    }
+    
+    // Check attempt limits
+    if (isStudent && quiz) {
+      const hasExceededAttempts = quiz.multipleAttempts 
+        ? userAttempts.length >= quiz.attemptLimit
+        : userAttempts.length > 0;
+      
+      if (hasExceededAttempts) {
+        setError(`You have already used all ${quiz.attemptLimit || 1} allowed attempts.`);
+        setCanTakeQuiz(false);
+        return;
+      }
     }
     
     setQuizStarted(true);
@@ -485,6 +510,14 @@ export default function QuizTaking() {
 
   // Quiz start screen (before timer starts)
   if (!quizStarted && !showResults) {
+    // Calculate attempt status
+    const hasExceededAttempts = quiz?.multipleAttempts 
+      ? userAttempts.length >= (quiz.attemptLimit || 1)
+      : userAttempts.length > 0;
+    
+    const attemptStatus = checkQuizAvailability(quiz || {} as Quiz);
+    const finalCanTake = canTakeQuiz && attemptStatus.canTake && !hasExceededAttempts;
+
     return (
       <div className="container-fluid px-4 py-3">
         <div className="row justify-content-center">
@@ -517,25 +550,87 @@ export default function QuizTaking() {
                   </div>
                 </div>
 
-                {userAttempts.length > 0 && (
+                {/* Show attempt information */}
+                {isStudent && (
                   <div className="alert alert-info mb-4">
-                    <h6>Previous Attempts:</h6>
+                    <h6>Attempt Information:</h6>
                     <p className="mb-0">
-                      You have taken this quiz {userAttempts.length} time(s). 
-                      {quiz.multipleAttempts && (
-                        <span> You have {quiz.attemptLimit - userAttempts.length} attempt(s) remaining.</span>
+                      You have taken this quiz <strong>{userAttempts.length}</strong> time(s).
+                      {quiz.multipleAttempts ? (
+                        <>
+                          <br />
+                          Maximum attempts allowed: <strong>{quiz.attemptLimit}</strong>
+                          <br />
+                          {hasExceededAttempts ? (
+                            <span className="text-danger">
+                              <strong>You have used all your attempts.</strong>
+                            </span>
+                          ) : (
+                            <span className="text-success">
+                              You have <strong>{quiz.attemptLimit - userAttempts.length}</strong> attempt(s) remaining.
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        userAttempts.length > 0 && (
+                          <><br /><span className="text-danger">Single attempt quiz - already completed.</span></>
+                        )
                       )}
                     </p>
                   </div>
                 )}
 
-                <button 
-                  className="btn btn-primary btn-lg"
-                  onClick={startQuiz}
-                >
-                  <FaFlag className="me-2" />
-                  {userAttempts.length > 0 ? 'Retake Quiz' : 'Start Quiz'}
-                </button>
+                {/* Show availability issues */}
+                {isStudent && !finalCanTake && (
+                  <div className="alert alert-warning mb-4">
+                    <FaExclamationTriangle className="me-2" />
+                    <strong>Quiz Not Available</strong>
+                    <p className="mb-0 mt-2">
+                      {hasExceededAttempts 
+                        ? `You have used all ${quiz?.attemptLimit || 1} allowed attempts.`
+                        : !attemptStatus.canTake 
+                        ? attemptStatus.reason
+                        : 'Quiz cannot be taken at this time.'
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {/* Start button - only show if student can actually take it */}
+                {(isPreview || finalCanTake) && (
+                  <button 
+                    className="btn btn-primary btn-lg"
+                    onClick={startQuiz}
+                  >
+                    <FaFlag className="me-2" />
+                    {isPreview 
+                      ? 'Start Preview' 
+                      : userAttempts.length > 0 
+                      ? 'Retake Quiz' 
+                      : 'Start Quiz'
+                    }
+                  </button>
+                )}
+
+                {/* Go back button for students who can't take quiz */}
+                {isStudent && !finalCanTake && (
+                  <div className="mt-3">
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
+                    >
+                      Back to Quizzes
+                    </button>
+                    {userAttempts.length > 0 && (
+                      <button 
+                        className="btn btn-outline-primary ms-2"
+                        onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/results`)}
+                      >
+                        View Results
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="mt-3">
                   <small className="text-muted">
