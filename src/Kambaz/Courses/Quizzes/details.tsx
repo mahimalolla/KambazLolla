@@ -59,14 +59,17 @@ export default function QuizDetails() {
 
   const fetchQuizDetails = async () => {
     try {
-      const response = await fetch(`/api/courses/${courseId}/quizzes/${quizId}`);
+      // 👈 FIXED: Added full server URL
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched quiz details:', data);
         setQuiz(data);
       } else {
         setError('Failed to load quiz details');
       }
     } catch (error) {
+      console.error('Error loading quiz:', error);
       setError('Error loading quiz');
     } finally {
       setLoading(false);
@@ -75,7 +78,8 @@ export default function QuizDetails() {
 
   const fetchUserAttempts = async () => {
     try {
-      const response = await fetch(`/api/courses/${courseId}/quizzes/${quizId}/attempts/${state.user._id}`);
+      // 👈 FIXED: Added full server URL
+      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${courseId}/quizzes/${quizId}/attempts/${state.user._id}`);
       if (response.ok) {
         const data = await response.json();
         setUserAttempts(data);
@@ -104,6 +108,17 @@ export default function QuizDetails() {
         <div className="alert alert-danger">
           <FaExclamationTriangle className="me-2" />
           {error || 'Quiz not found'}
+          <div className="mt-2">
+            <button className="btn btn-outline-danger btn-sm me-2" onClick={fetchQuizDetails}>
+              Retry
+            </button>
+            <button 
+              className="btn btn-secondary btn-sm" 
+              onClick={() => navigate(`/Kambaz/Courses/${courseId}/Quizzes`)}
+            >
+              Back to Quizzes
+            </button>
+          </div>
         </div>
       </div>
     );
