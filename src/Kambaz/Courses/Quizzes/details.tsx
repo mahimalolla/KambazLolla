@@ -239,11 +239,23 @@ export default function QuizDetails() {
             </>
           )}
           
-          {isStudent && canTakeQuiz && !hasExceededAttempts && (
+          {isStudent && canTakeQuiz && !hasExceededAttempts && availability.canTake && (
             <button className="btn btn-success btn-lg" onClick={handleStartQuiz}>
               <FaPlay className="me-2" />
               {lastAttempt ? 'Retake Quiz' : 'Start Quiz'}
             </button>
+          )}
+          
+          {isStudent && (!availability.canTake || !canTakeQuiz || hasExceededAttempts) && (
+            <div className="alert alert-warning">
+              <FaExclamationTriangle className="me-2" />
+              <strong>Quiz Not Available</strong>
+              <p className="mb-0 mt-2">
+                {!availability.canTake ? availability.status : 
+                 hasExceededAttempts ? 'No attempts remaining' : 
+                 'Quiz cannot be taken at this time'}
+              </p>
+            </div>
           )}
         </div>
       </div>
