@@ -252,9 +252,19 @@ export default function QuizDetails() {
               <strong>Quiz Not Available</strong>
               <p className="mb-0 mt-2">
                 {!availability.canTake ? availability.status : 
-                 hasExceededAttempts ? 'No attempts remaining' : 
+                 hasExceededAttempts ? `You have used all ${quiz.attemptLimit} allowed attempts` : 
                  'Quiz cannot be taken at this time'}
               </p>
+            </div>
+          )}
+          
+          {/* Show remaining attempts for students */}
+          {isStudent && quiz.multipleAttempts && canTakeQuiz && availability.canTake && (
+            <div className="alert alert-info mt-2">
+              <strong>Attempts:</strong> {userAttempts.length} of {quiz.attemptLimit} used
+              {quiz.attemptLimit - userAttempts.length > 0 && (
+                <span className="text-success"> | {quiz.attemptLimit - userAttempts.length} remaining</span>
+              )}
             </div>
           )}
         </div>
@@ -295,7 +305,16 @@ export default function QuizDetails() {
                   <div className="mb-3">
                     <label className="form-label fw-semibold text-muted">Multiple Attempts</label>
                     <p className="mb-0">
-                      {quiz.multipleAttempts ? `Yes (${quiz.attemptLimit} attempts)` : 'No'}
+                      {quiz.multipleAttempts ? (
+                        <>
+                          Yes ({quiz.attemptLimit} {quiz.attemptLimit === 1 ? 'attempt' : 'attempts'} allowed)
+                          {isStudent && userAttempts.length > 0 && (
+                            <span className="text-muted small d-block">
+                              You have used {userAttempts.length} of {quiz.attemptLimit}
+                            </span>
+                          )}
+                        </>
+                      ) : 'No (1 attempt only)'}
                     </p>
                   </div>
                   <div className="mb-3">
@@ -414,22 +433,18 @@ export default function QuizDetails() {
             </div>
           </div>
 
-          {/* Student Attempt History */}
+          {/* Student Attempt History - Only show if there are attempts */}
           {isStudent && userAttempts.length > 0 && (
             <div className="card border-0 shadow-sm mb-4">
               <div className="card-header bg-white">
-                <h6 className="mb-0">Your Attempts</h6>
+                <div className="d-flex justify-content-between align-items-center">
+                  <h6 className="mb-0">Your Attempts</h6>
+                  <span className="badge bg-primary">
+                    {userAttempts.length} / {quiz.multipleAttempts ? quiz.attemptLimit : 1}
+                  </span>
+                </div>
               </div>
               <div className="card-body">
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <span className="text-muted">Attempts Used:</span>
-                    <span className="fw-bold">
-                      {userAttempts.length} / {quiz.multipleAttempts ? quiz.attemptLimit : 1}
-                    </span>
-                  </div>
-                </div>
-
                 {lastAttempt && (
                   <div>
                     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -451,8 +466,15 @@ export default function QuizDetails() {
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}/results`)}
                     >
-                      View All Attempts
+                      View All {userAttempts.length} Attempts
                     </button>
+                  </div>
+                )}
+
+                {/* Show remaining attempts */}
+                {quiz.multipleAttempts && !hasExceededAttempts && (
+                  <div className="mt-2 text-success small">
+                    <strong>{quiz.attemptLimit - userAttempts.length}</strong> attempt{quiz.attemptLimit - userAttempts.length !== 1 ? 's' : ''} remaining
                   </div>
                 )}
               </div>
@@ -467,6 +489,19 @@ export default function QuizDetails() {
             <div className="card-body">
               {isStudent && (
                 <>
+                  {/* Show attempt status */}
+                  {quiz.multipleAttempts && (
+                    <div className="alert alert-info py-2 px-3 small mb-2">
+                      <strong>Attempts:</strong> {userAttempts.length} / {quiz.attemptLimit} used
+                      {hasExceededAttempts && (
+                        <div className="text-danger mt-1">
+                          <FaExclamationTriangle className="me-1" size={10} />
+                          All attempts used
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {!canTakeQuiz && (
                     <div className="alert alert-warning py-2 px-3 small">
                       <FaExclamationTriangle className="me-1" size={12} />
