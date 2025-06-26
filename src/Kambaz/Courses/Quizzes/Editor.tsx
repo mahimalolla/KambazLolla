@@ -658,6 +658,24 @@ export default function QuizEditor() {
                   </div>
                 </div>
 
+                {/* NEW: Attempt Limit Field */}
+                {quiz.multipleAttempts && (
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Number of Attempts Allowed</label>
+                      <input 
+                        type="number"
+                        className="form-control"
+                        value={quiz.attemptLimit}
+                        onChange={(e) => handleInputChange('attemptLimit', parseInt(e.target.value) || 1)}
+                        min="1"
+                        max="10"
+                      />
+                      <small className="text-muted">Students can take this quiz up to this many times</small>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Show Correct Answers</label>
                   <select 
