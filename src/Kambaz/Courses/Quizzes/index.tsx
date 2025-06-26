@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../AuthContext";
 import { FaPlus, FaRocket, FaEdit, FaTrash, FaEye, FaSearch } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import * as quizClient from './client'; // 🔧 FIXED: Use client instead of fetch
 
 export default function QuizList() {
   const { state } = useAuth();
@@ -18,53 +19,50 @@ export default function QuizList() {
   const isFaculty = state.user?.role === 'FACULTY' || state.user?.role === 'ADMIN';
   const isStudent = state.user?.role === 'STUDENT';
 
+  // 🔧 FIXED: Use client instead of fetch with better error handling
   const fetchQuizzes = async () => {
-    if (!cid) return;
+    if (!cid) {
+      setError('Missing course ID');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
-      console.log("Fetching quizzes for course:", cid);
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`);
+      console.log("🔍 Fetching quizzes for course:", cid);
+      const data = await quizClient.findQuizzesByCourse(cid);
+      console.log("✅ Fetched quizzes successfully:", data);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Fetched quizzes:", data);
-      setQuizzes(data);
+      // Ensure we always have an array
+      const safeQuizzes = Array.isArray(data) ? data : [];
+      setQuizzes(safeQuizzes);
       
     } catch (err: any) {
-      console.error('Error fetching quizzes:', err);
-      setError('Failed to load quizzes');
+      console.error('💥 Error fetching quizzes:', err);
+      setError('Failed to load quizzes: ' + (err.message || 'Unknown error'));
+      setQuizzes([]); // Reset to empty array on error
     } finally {
       setLoading(false);
     }
   };
   
+  // 🔧 FIXED: Use client instead of fetch with better error handling
   const createQuiz = async () => {
-    if (!cid) return;
+    if (!cid) {
+      alert('Missing course ID');
+      return;
+    }
     
     try {
-      console.log("Creating new quiz...");
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'New Quiz',
-          description: '',
-          published: false
-        })
+      console.log("➕ Creating new quiz...");
+      const newQuiz = await quizClient.createQuiz(cid, {
+        title: 'New Quiz',
+        description: '',
+        published: false
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const newQuiz = await response.json();
-      console.log("Created quiz:", newQuiz);
+      console.log("✅ Created quiz successfully:", newQuiz);
       
       // Add to the beginning of the list (most recent first)
       setQuizzes([newQuiz, ...quizzes]);
@@ -73,67 +71,63 @@ export default function QuizList() {
       navigate(`/Kambaz/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
       
     } catch (err: any) {
-      console.error('Error creating quiz:', err);
-      alert('Failed to create quiz: ' + err.message);
+      console.error('💥 Error creating quiz:', err);
+      alert('Failed to create quiz: ' + (err.message || 'Unknown error'));
     }
   };
 
-  // 👈 FIXED: Use proper PATCH endpoint for publish/unpublish
+  // 🔧 FIXED: Use client instead of fetch with improved error handling
   const togglePublish = async (quizId: string) => {
     const quiz = quizzes.find(q => q._id === quizId);
-    if (!quiz) return;
+    if (!quiz || !cid) {
+      alert('Quiz or course not found');
+      return;
+    }
     
     try {
-      console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
+      console.log("🚀 Toggling publish for quiz:", quizId, "Current published:", quiz.published);
       
-      // Use the dedicated PATCH endpoint for publish/unpublish
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/publish`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          published: !quiz.published
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-      
-      const updatedQuiz = await response.json();
-      console.log("Updated quiz:", updatedQuiz);
+      // Use the client's publishQuiz method
+      const updatedQuiz = await quizClient.publishQuiz(cid, quizId, !quiz.published);
+      console.log("✅ Published quiz successfully:", updatedQuiz);
       
       // Update the quiz in the list
       setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
       
+      // Show success message
+      const action = updatedQuiz.published ? 'published' : 'unpublished';
+      console.log(`✅ Quiz ${action} successfully`);
+      
     } catch (err: any) {
-      console.error('Error toggling publish:', err);
-      alert('Failed to update quiz: ' + err.message);
+      console.error('💥 Error toggling publish:', err);
+      alert('Failed to update quiz: ' + (err.message || 'Unknown error'));
     }
     
     setShowContextMenu(null);
   };
 
+  // 🔧 FIXED: Use client instead of fetch
   const deleteQuiz = async (quizId: string) => {
     if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
       return;
     }
     
+    if (!cid) {
+      alert('Missing course ID');
+      return;
+    }
+    
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log("🗑️ Deleting quiz:", quizId);
+      await quizClient.deleteQuiz(cid, quizId);
+      console.log("✅ Deleted quiz successfully");
       
       // Remove from list
       setQuizzes(quizzes.filter(q => q._id !== quizId));
       
     } catch (err: any) {
-      console.error('Error deleting quiz:', err);
-      alert('Failed to delete quiz: ' + err.message);
+      console.error('💥 Error deleting quiz:', err);
+      alert('Failed to delete quiz: ' + (err.message || 'Unknown error'));
     }
     
     setShowContextMenu(null);
@@ -223,7 +217,7 @@ export default function QuizList() {
       return dateA.getTime() - dateB.getTime();
     });
 
-  // 👈 IMPROVED: Better context menu with proper event handling
+  // Context menu component
   const ContextMenu = ({ quizId, quiz }: { quizId: string, quiz: any }) => (
     <div 
       className="dropdown-menu show position-absolute" 
@@ -329,7 +323,9 @@ export default function QuizList() {
       {/* Error State */}
       {error && (
         <div className="alert alert-danger d-flex justify-content-between align-items-center">
-          <span>{error}</span>
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
           <button className="btn btn-outline-danger btn-sm" onClick={fetchQuizzes}>
             Retry
           </button>
@@ -498,6 +494,19 @@ export default function QuizList() {
           </div>
         )}
       </div>
+
+      {/* Debug Information for Development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-3 bg-light rounded">
+          <h6>Debug Info (Development Only):</h6>
+          <p><strong>Course ID:</strong> {cid}</p>
+          <p><strong>User Role:</strong> {state.user?.role}</p>
+          <p><strong>Total Quizzes:</strong> {quizzes.length}</p>
+          <p><strong>Filtered Quizzes:</strong> {filteredQuizzes.length}</p>
+          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
+          <p><strong>Error:</strong> {error || 'None'}</p>
+        </div>
+      )}
     </div>
   );
 }
