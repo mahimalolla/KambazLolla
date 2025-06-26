@@ -32,6 +32,7 @@ export default function QuizEditor() {
     assignmentGroup: 'Quizzes',
     shuffleAnswers: true,
     timeLimit: 20,
+    hasTimeLimit: true, // NEW: Checkbox for time limit
     multipleAttempts: false,
     attemptLimit: 1,
     showCorrectAnswers: 'Immediately',
@@ -72,7 +73,16 @@ export default function QuizEditor() {
       const data = await response.json();
       console.log('Fetched quiz:', data);
       
-      setQuiz(data);
+      // Convert dates for datetime-local inputs
+      const formattedData = {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString().slice(0, 16) : '',
+        availableDate: data.availableDate ? new Date(data.availableDate).toISOString().slice(0, 16) : '',
+        availableUntil: data.availableUntil ? new Date(data.availableUntil).toISOString().slice(0, 16) : '',
+        hasTimeLimit: data.timeLimit > 0
+      };
+      
+      setQuiz(formattedData);
       setQuestions(data.questions || []);
       
     } catch (err: any) {
@@ -83,6 +93,7 @@ export default function QuizEditor() {
     }
   };
 
+  // UPDATED: Fixed save navigation
   const saveQuiz = async (publish = false) => {
     try {
       setSaving(true);
@@ -92,7 +103,12 @@ export default function QuizEditor() {
         ...quiz,
         questions,
         points: questions.reduce((sum, q) => sum + q.points, 0),
-        published: publish || quiz.published
+        published: publish || quiz.published,
+        // Convert datetime-local back to ISO strings
+        dueDate: quiz.dueDate ? new Date(quiz.dueDate).toISOString() : '',
+        availableDate: quiz.availableDate ? new Date(quiz.availableDate).toISOString() : '',
+        availableUntil: quiz.availableUntil ? new Date(quiz.availableUntil).toISOString() : '',
+        timeLimit: quiz.hasTimeLimit ? quiz.timeLimit : 0
       };
       
       const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
@@ -112,8 +128,10 @@ export default function QuizEditor() {
       
       if (publish) {
         alert('Quiz saved and published successfully!');
+        navigate(`/Kambaz/Courses/${cid}/Quizzes`); // Navigate to quiz list
       } else {
         alert('Quiz saved successfully!');
+        navigate(`/Kambaz/Courses/${cid}/Quizzes/${quizId}`); // Navigate to details
       }
       
     } catch (err: any) {
@@ -599,21 +617,33 @@ export default function QuizEditor() {
                 </div>
               </div>
               <div className="card-body">
+                {/* NEW: Time Limit with Checkbox */}
                 <div className="row mb-3">
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">
-                      <FaClock className="me-1 text-muted" size={12} />
-                      Time Limit
-                    </label>
-                    <div className="input-group">
+                    <div className="form-check mb-2">
                       <input 
-                        type="number"
-                        className="form-control"
-                        value={quiz.timeLimit}
-                        onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value))}
+                        className="form-check-input"
+                        type="checkbox"
+                        checked={quiz.hasTimeLimit}
+                        onChange={(e) => handleInputChange('hasTimeLimit', e.target.checked)}
+                        id="hasTimeLimit"
                       />
-                      <span className="input-group-text">Minutes</span>
+                      <label className="form-check-label fw-semibold" htmlFor="hasTimeLimit">
+                        <FaClock className="me-1 text-muted" size={12} />
+                        Time Limit
+                      </label>
                     </div>
+                    {quiz.hasTimeLimit && (
+                      <div className="input-group">
+                        <input 
+                          type="number"
+                          className="form-control"
+                          value={quiz.timeLimit}
+                          onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value))}
+                        />
+                        <span className="input-group-text">Minutes</span>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Multiple Attempts</label>
@@ -670,6 +700,47 @@ export default function QuizEditor() {
                         One Question at a Time
                       </label>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* NEW: Dates Section */}
+            <div className="card border-0 shadow-sm mb-4">
+              <div className="card-header bg-white border-bottom">
+                <div className="d-flex align-items-center">
+                  <FaCalendarAlt className="me-2 text-muted" size={14} />
+                  <h6 className="mb-0 fw-semibold">Dates</h6>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label fw-semibold">Due Date</label>
+                    <input 
+                      type="datetime-local"
+                      className="form-control"
+                      value={quiz.dueDate}
+                      onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label fw-semibold">Available From</label>
+                    <input 
+                      type="datetime-local"
+                      className="form-control"
+                      value={quiz.availableDate}
+                      onChange={(e) => handleInputChange('availableDate', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label fw-semibold">Available Until</label>
+                    <input 
+                      type="datetime-local"
+                      className="form-control"
+                      value={quiz.availableUntil}
+                      onChange={(e) => handleInputChange('availableUntil', e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
