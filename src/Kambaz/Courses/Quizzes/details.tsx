@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaPlay, FaEdit, FaEye, FaClock, FaQuestion, FaCalendarAlt, FaTrophy, FaExclamationTriangle, FaRocket } from 'react-icons/fa';
 import { useAuth } from '../../../AuthContext';
+import * as quizClient from './client'; // 🔧 FIXED: Use client instead of fetch
 
 interface Quiz {
   _id: string;
@@ -57,62 +58,84 @@ export default function QuizDetails() {
     }
   }, [quizId, cid]);
 
+  // 🔧 FIXED: Use client instead of fetch
   const fetchQuizDetails = async () => {
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched quiz details:', data);
-        setQuiz(data);
-      } else {
-        setError('Failed to load quiz details');
+      if (!cid || !quizId) {
+        setError('Missing course ID or quiz ID');
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error loading quiz:', error);
-      setError('Error loading quiz');
+
+      setLoading(true);
+      setError('');
+      
+      console.log('🔍 Fetching quiz details via client:', { cid, quizId });
+      const data = await quizClient.findQuizById(cid, quizId);
+      console.log('✅ Fetched quiz details:', data);
+      setQuiz(data);
+      
+    } catch (error: any) {
+      console.error('💥 Error loading quiz:', error);
+      setError('Failed to load quiz details: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔧 FIXED: Use client instead of fetch
   const fetchUserAttempts = async () => {
     try {
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/attempts/${state.user._id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserAttempts(data);
-      }
-    } catch (error) {
-      console.error('Error fetching attempts:', error);
+      if (!cid || !quizId || !state.user?._id) return;
+
+      console.log('🔍 Fetching user attempts via client:', { cid, quizId, userId: state.user._id });
+      const data = await quizClient.getUserAttempts(cid, quizId, state.user._id);
+      console.log('✅ Fetched user attempts:', data);
+      setUserAttempts(data || []);
+      
+    } catch (error: any) {
+      console.error('⚠️ Error fetching attempts (non-critical):', error);
+      // Don't show error to user for attempts - it's not critical
     }
   };
 
-  // NEW: Toggle publish/unpublish function
+  // 🔧 FIXED: Use client instead of fetch with better error handling
   const togglePublish = async () => {
-    if (!quiz) return;
+    if (!quiz || !cid || !quizId) return;
     
     try {
-      const updatedQuizData = {
-        ...quiz,
-        published: !quiz.published
-      };
-      
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedQuizData)
+      console.log('🚀 Toggling publish via client:', { 
+        cid, 
+        quizId, 
+        currentStatus: quiz.published,
+        newStatus: !quiz.published 
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const updatedQuiz = await quizClient.publishQuiz(cid, quizId, !quiz.published);
+      console.log('✅ Successfully toggled publish status:', updatedQuiz);
       
-      const updatedQuiz = await response.json();
       setQuiz(updatedQuiz);
       
+      // Show success message
+      const message = updatedQuiz.published ? 'Quiz published successfully!' : 'Quiz unpublished successfully!';
+      console.log('📢', message);
+      
     } catch (err: any) {
-      console.error('Error toggling publish:', err);
-      alert('Failed to update quiz: ' + err.message);
+      console.error('💥 Error toggling publish:', err);
+      
+      // More specific error messages
+      let errorMessage = 'Failed to update quiz';
+      if (err.message.includes('404')) {
+        errorMessage = 'Quiz not found. Please refresh the page and try again.';
+      } else if (err.message.includes('403')) {
+        errorMessage = 'You do not have permission to publish this quiz.';
+      } else if (err.message.includes('500')) {
+        errorMessage = 'Server error. Please try again in a moment.';
+      } else {
+        errorMessage = `Failed to update quiz: ${err.message}`;
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -134,8 +157,9 @@ export default function QuizDetails() {
       <div className="container-fluid px-4 py-3">
         <div className="alert alert-danger">
           <FaExclamationTriangle className="me-2" />
-          {error || 'Quiz not found'}
-          <div className="mt-2">
+          <strong>Error Loading Quiz</strong>
+          <p className="mb-2 mt-2">{error || 'Quiz not found'}</p>
+          <div className="mt-3">
             <button className="btn btn-outline-danger btn-sm me-2" onClick={fetchQuizDetails}>
               Retry
             </button>
@@ -146,6 +170,16 @@ export default function QuizDetails() {
               Back to Quizzes
             </button>
           </div>
+        </div>
+        
+        {/* Debug Info */}
+        <div className="mt-4 p-3 bg-light rounded">
+          <h6>Debug Information:</h6>
+          <p><strong>Course ID:</strong> {cid || 'MISSING'}</p>
+          <p><strong>Quiz ID:</strong> {quizId || 'MISSING'}</p>
+          <p><strong>Current URL:</strong> {window.location.href}</p>
+          <p><strong>Error:</strong> {error}</p>
+          <p><strong>User Role:</strong> {state.user?.role}</p>
         </div>
       </div>
     );
@@ -219,10 +253,11 @@ export default function QuizDetails() {
         <div className="d-flex gap-2">
           {isFaculty && (
             <>
-              {/* NEW: Publish/Unpublish Button */}
+              {/* 🔧 FIXED: Publish/Unpublish Button */}
               <button 
                 className={`btn ${quiz.published ? 'btn-warning' : 'btn-success'}`}
                 onClick={togglePublish}
+                title={quiz.published ? 'Click to unpublish this quiz' : 'Click to publish this quiz'}
               >
                 <FaRocket className="me-1" size={12} />
                 {quiz.published ? 'Unpublish' : 'Publish'}
