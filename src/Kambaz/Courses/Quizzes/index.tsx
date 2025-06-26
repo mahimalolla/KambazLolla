@@ -79,35 +79,42 @@ export default function QuizList() {
   };
 
   const togglePublish = async (quizId: string) => {
-    const quiz = quizzes.find(q => q._id === quizId);
-    if (!quiz) return;
+  const quiz = quizzes.find(q => q._id === quizId);
+  if (!quiz) return;
+  
+  try {
+    console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
     
-    try {
-      console.log("Toggling publish for quiz:", quizId, "Current published:", quiz.published);
-      
-      const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}/publish`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ published: !quiz.published })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const updatedQuiz = await response.json();
-      console.log("Updated quiz:", updatedQuiz);
-      
-      // Update the quiz in the list
-      setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
-      
-    } catch (err: any) {
-      console.error('Error toggling publish:', err);
-      alert('Failed to update quiz: ' + err.message);
+    // Use PUT instead of PATCH - update the entire quiz
+    const updatedQuizData = {
+      ...quiz,
+      published: !quiz.published
+    };
+    
+    const response = await fetch(`https://kambaz-node.onrender.com/api/courses/${cid}/quizzes/${quizId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedQuizData)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
     
-    setShowContextMenu(null);
-  };
+    const updatedQuiz = await response.json();
+    console.log("Updated quiz:", updatedQuiz);
+    
+    // Update the quiz in the list
+    setQuizzes(quizzes.map(q => q._id === quizId ? updatedQuiz : q));
+    
+  } catch (err: any) {
+    console.error('Error toggling publish:', err);
+    alert('Failed to update quiz: ' + err.message);
+  }
+  
+  setShowContextMenu(null);
+};
 
   const deleteQuiz = async (quizId: string) => {
     if (!window.confirm('Are you sure you want to delete this quiz?')) {
